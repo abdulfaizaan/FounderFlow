@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Founder {
+  id                 String         @id @default(cuid())
+  clerkId            String         @unique
+  name               String
+  email              String         @unique
+  timezone           String         @default("UTC")
+  workingHours       Json?
+  subscriptionStatus String         @default("none")
+  activeStartupId    String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime       @updatedAt
+  startups           Startup[]
+  subscription       Subscription?
+  copilotMessages    CopilotMessage[]
+}
+
+model Startup {
+  id              String           @id @default(cuid())
+  founderId       String
+  name            String
+  stage           String           @default("idea")
+  industry        String?
+  website         String?
+  description     String?
+  targetCustomer  String?
+  isPrimary       Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  founder         Founder          @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  goals           Goal[]
+  standups        Standup[]
+  blockers        Blocker[]
+  evidence        Evidence[]
+  recommendations Recommendation[]
+  copilotMessages CopilotMessage[]
+  weeklyReviews   WeeklyReview[]
+  journalEntries  JournalEntry[]
+
+  @@index([founderId])
+}
+
+model Goal {
+  id                  String       @id @default(cuid())
+  startupId           String
+  title               String
+  targetDate          DateTime?
+  targetValue         Float?
+  definitionOfSuccess String?
+  status              String       @default("active")
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  startup             Startup      @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  milestones          Milestone[]
+
+  @@index([startupId])
+}
+
+model Milestone {
+  id        String   @id @default(cuid())
+  goalId    String
+  title     String
+  status    String   @default("pending")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([goalId])
+}
+
+model Task {
+  id              String       @id @default(cuid())
+  milestoneId     String
+  title           String
+  description     String?
+  status          String       @default("TODO")
+  priority        String       @default("MEDIUM")
+  estimateMinutes Int?
+  dueDate         DateTime?
+  scheduledFor    DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  milestone       Milestone    @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  blocker         Blocker?
+  recommendations Recommendation[]
+
+  @@index([milestoneId])
+}
+
+model Standup {
+  id         String   @id @default(cuid())
+  startupId  String
+  date       DateTime @default(now())
+  yesterday  String?
+  today      String?
+  blockers   String?
+  createdAt  DateTime @default(now())
+  startup    Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, date])
+  @@index([startupId, date])
+}
+
+model Blocker {
+  id              String    @id @default(cuid())
+  startupId       String
+  taskId          String?   @unique
+  description     String
+  status          String    @default("OPEN")
+  sourceStandupId String?
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  startup         Startup   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  task            Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([startupId])
+}
+
+model Evidence {
+  id         String   @id @default(cuid())
+  startupId  String
+  type       String
+  value      Float?
+  note       String?
+  recordedAt DateTime @default(now())
+  startup    Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+}
+
+model Recommendation {
+  id            String    @id @default(cuid())
+  startupId     String
+  taskId        String?
+  actionText    String
+  rationale     String
+  confidence    Float
+  alternatives  Json?
+  inputSnapshot Json?
+  status        String    @default("GENERATED")
+  feedback      String?
+  generatedAt   DateTime  @default(now())
+  startup       Startup   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  task          Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([startupId])
+}
+
+model CopilotMessage {
+  id                String   @id @default(cuid())
+  startupId         String
+  founderId         String?
+  role              String
+  content           String
+  contextSnapshotId String?
+  createdAt         DateTime @default(now())
+  startup           Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  founder           Founder? @relation(fields: [founderId], references: [id], onDelete: SetNull)
+
+  @@index([startupId])
+}
+
+model WeeklyReview {
+  id               String   @id @default(cuid())
+  startupId        String
+  weekStart        DateTime
+  completedSummary String?
+  blockersSummary  String?
+  evidenceSummary  String?
+  recommendedFocus String?
+  createdAt        DateTime @default(now())
+  startup          Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId, weekStart])
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  startupId String
+  type      String
+  content   String
+  createdAt DateTime @default(now())
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId, createdAt])
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  founderId              String    @unique
+  provider               String    @default("razorpay")
+  plan                   String    @default("trial")
+  status                 String    @default("TRIAL")
+  trialEndsAt            DateTime?
+  currentPeriodEnd       DateTime?
+  razorpayCustomerId     String?
+  razorpaySubscriptionId String?
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  founder                Founder   @relation(fields: [founderId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  founderId String?
+  startupId String?
+  event     String
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([event, createdAt])
+  @@index([founderId, createdAt])
+}
