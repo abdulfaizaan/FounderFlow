@@ -15,7 +15,10 @@ import {
   ListTodo,
   Sun,
   Moon,
+  Users,
+  UserRound,
 } from "lucide-react";
+import { NotificationBell } from "@/components/dashboard/notifications/notification-bell";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { StartupSwitcher } from "@/components/dashboard/startup-switcher";
 import { AmbientBackground } from "@/components/dashboard/ambient-background";
@@ -54,6 +57,9 @@ const navItems = [
   { href: "/review", label: "Weekly Review", icon: Sparkles },
   { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/history", label: "History", icon: TrendingUp },
+  { href: "/wiki", label: "Wiki", icon: BookOpen },
+  { href: "/crm", label: "CRM", icon: UserRound },
+  { href: "/community/chat", label: "Community", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -105,7 +111,10 @@ export function DashboardShell({ startups, activeStartupId, children }: Dashboar
         </nav>
 
         <div className="border-t border-sidebar-border pt-4 px-2 flex items-center justify-between gap-2">
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
           <div className="min-w-0 flex-1 overflow-hidden">
             <UserButton showName />
           </div>

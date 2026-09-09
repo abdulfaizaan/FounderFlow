@@ -20,6 +20,20 @@ model Founder {
   startups           Startup[]
   subscription       Subscription?
   copilotMessages    CopilotMessage[]
+
+  // Community relations
+  messages           Message[]
+  forumPosts         ForumPost[]
+  forumReplies       ForumReply[]
+  forumVotes         ForumVote[]
+  resources          Resource[]
+  jobListings        JobListing[]
+  coFounderPosts     CoFounderPost[]
+  communityEvents    CommunityEvent[]
+  eventRsvps         EventRSVP[]
+  notifications      Notification[]
+  notificationPrefs  NotificationPreference?
+
 }
 
 model Startup {
@@ -223,4 +237,187 @@ model AnalyticsEvent {
 
   @@index([event, createdAt])
   @@index([founderId, createdAt])
+}
+
+// --- Community Models ---
+
+model Channel {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channelId String
+  founderId String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  founder   Founder  @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+  @@index([founderId])
+}
+
+model ForumCategory {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  posts       ForumPost[]
+  createdAt   DateTime    @default(now())
+}
+
+model ForumPost {
+  id          String       @id @default(cuid())
+  title       String
+  content     String       @db.Text
+  founderId   String
+  founder     Founder      @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    ForumCategory @relation(fields: [categoryId], references: [id])
+  upvotes     Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  replies     ForumReply[]
+  votes       ForumVote[]
+
+  @@index([founderId])
+  @@index([categoryId])
+}
+
+model ForumReply {
+  id        String     @id @default(cuid())
+  content   String     @db.Text
+  postId    String
+  post      ForumPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  founderId String
+  founder   Founder    @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    ForumReply? @relation("ReplyToReply", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ForumReply[] @relation("ReplyToReply")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([postId])
+  @@index([founderId])
+}
+
+model ForumVote {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  founderId String
+  createdAt DateTime @default(now())
+  founder   Founder   @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, founderId])
+}
+
+model Resource {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  url           String
+  category     String
+  tags          String[]
+  submittedById String
+  isCurated    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  founder       Founder  @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+
+  @@index([submittedById])
+  @@index([category])
+}
+
+model JobListing {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String
+  location    String
+  type        String
+  url         String
+  postedById  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  founder     Founder   @relation(fields: [postedById], references: [id], onDelete: Cascade)
+
+  @@index([postedById])
+}
+
+model CoFounderPost {
+  id                 String   @id @default(cuid())
+  title              String
+  description        String
+  skillsNeeded       String[]
+  skillsOffered      String[]
+  locationPreference String?
+  postedById         String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  founder            Founder   @relation(fields: [postedById], references: [id], onDelete: Cascade)
+
+  @@index([postedById])
+}
+
+model CommunityEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  location    String
+  type        String
+  organizerId String
+  capacity    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  organizer   Founder   @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  rsvps       EventRSVP[]
+
+  @@index([organizerId])
+}
+
+model EventRSVP {
+  id        String   @id @default(cuid())
+  eventId   String
+  founderId String
+  status    String
+  createdAt DateTime @default(now())
+  event     CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  founder   Founder        @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, founderId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  founderId String
+  type      String
+  title     String
+  body      String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  founder   Founder  @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  @@index([founderId])
+  @@index([createdAt])
+}
+
+model NotificationPreference {
+  id               String  @id @default(cuid())
+  founderId        String  @unique
+  emailEnabled     Boolean @default(true)
+  inAppEnabled     Boolean @default(true)
+  pushEnabled      Boolean @default(false)
+  categorySettings Json    @default("{\"MENTION\": true, \"REPLY\": true, \"EVENT\": true, \"MILESTONE\": true, \"SYSTEM\": true}")
+  founder          Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
 }

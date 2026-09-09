@@ -22,10 +22,42 @@ const SUGGESTED_PROMPTS = [
   "What's my biggest risk?",
 ];
 
+import { useState, useRef, useEffect } from "react";
+import { chatWithCopilot } from "@/lib/actions/copilot";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bot, Send, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface Message {
+  role: "FOUNDER" | "AI";
+  content: string;
+}
+
+type CoachMode = "tactical" | "strategic" | "support";
+
+interface CopilotChatProps {
+  history: Message[];
+  usage?: { used: number; limit: number };
+}
+
+const MODE_LABELS: Record<CoachMode, string> = {
+  tactical: "Tactical",
+  strategic: "Strategic",
+  support: "Support",
+};
+
+const SUGGESTED_PROMPTS = {
+  tactical: ["What should I work on today?", "I have 3 hours, what should I do?"],
+  strategic: ["Why am I not making progress?", "What's my biggest risk?"],
+  support: ["How do I deal with burnout?", "I'm feeling overwhelmed, help me prioritize."],
+};
+
 export function CopilotChat({ history, usage }: CopilotChatProps) {
   const [messages, setMessages] = useState<Message[]>(history);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<CoachMode>("tactical");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,7 +74,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
     setLoading(true);
 
     try {
-      const result = await chatWithCopilot(message);
+      const result = await chatWithCopilot(message, mode);
       const aiMessage: Message = { role: "AI", content: result.response };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
@@ -65,24 +97,42 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
       transition={{ duration: 0.3, delay: 0.2 }}
       className="rounded-2xl border bg-card overflow-hidden"
     >
-      <div className="flex items-center gap-2 px-5 py-3 border-b bg-muted/30">
-        <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#6349ea] to-[#0099ff] flex items-center justify-center">
-          <Bot className="h-4 w-4 text-white" />
+      <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#6349ea] to-[#0099ff] flex items-center justify-center">
+            <Bot className="h-4 w-4 text-white" />
+          </div>
+          <h3 className="text-sm font-semibold">AI Coach</h3>
         </div>
-        <h3 className="text-sm font-semibold">AI copilot</h3>
-        <span className="text-xs text-muted-foreground ml-auto">Grounded in your data</span>
-        {usage && (
-          <span
-            className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-              usage.used >= usage.limit
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "bg-muted text-muted-foreground"
-            }`}
-            title={`${usage.used} of ${usage.limit} AI messages used this month. Resets on the 1st.`}
-          >
-            {usage.used} / {usage.limit} this month
-          </span>
-        )}
+
+        <div className="flex items-center gap-3">
+          <div className="flex bg-muted rounded-lg p-1">
+            {(Object.keys(MODE_LABELS) as CoachMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={cn(
+                  "px-2 py-1 text-[10px] rounded-md transition-all",
+                  mode === m ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {MODE_LABELS[m]}
+              </button>
+            ))}
+          </div>
+          {usage && (
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                usage.used >= usage.limit
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  : "bg-muted text-muted-foreground"
+              }`}
+              title={`${usage.used} of ${usage.limit} AI messages used this month. Resets on the 1st.`}
+            >
+              {usage.used} / {usage.limit}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="p-5">
@@ -93,7 +143,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
               Try asking:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SUGGESTED_PROMPTS.map((prompt) => (
+              {SUGGESTED_PROMPTS[mode].map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => handleSend(prompt)}
@@ -155,7 +205,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
             placeholder={
               atLimit
                 ? "Monthly AI limit reached — resets on the 1st"
-                : "Ask your copilot..."
+                : `Ask your ${mode} coach...`
             }
             className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 transition-shadow"
             disabled={loading || atLimit}

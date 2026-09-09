@@ -12,7 +12,21 @@ import { revalidatePath } from "next/cache";
 export async function chatWithCopilot(message: string) {
 // ... existing chatWithCopilot implementation ...
 
-export async function chatWithCopilot(message: string) {
+type CoachMode = "tactical" | "strategic" | "support";
+
+function getSystemPrompt(mode: CoachMode) {
+  const baseIdentity = "You are the Personal AI Coach for a solo founder. You have access to their startup data. Your goal is to help them maintain momentum, validate hypotheses, and avoid common founder pitfalls.";
+
+  const modes: Record<CoachMode, string> = {
+    tactical: "MODE: TACTICAL. Focus on immediate execution. Be concise and actionable. Help the founder organize their today, identify the very next step, and remove immediate friction. Prioritize efficiency and output.",
+    strategic: "MODE: STRATEGIC. Focus on the big picture. Challenge the founder's assumptions. Ask critical questions about Product-Market Fit, growth levers, and strategic alignment. Focus on 'Why' and 'What if' rather than just 'How'.",
+    support: "MODE: SUPPORT. Focus on the founder's mental state and sustainability. Be empathic and reflective. Help them manage burnout, celebrate small wins, and maintain a healthy perspective on the journey.",
+  };
+
+  return `${baseIdentity}\n\n${modes[mode]}\n\nRules:\n- Reference specific tasks, goals, blockers, or evidence in your answers\n- If the data is insufficient to answer, say so clearly\n- Be concise and actionable\n- Focus on what helps the founder make progress toward their goal\n- Keep responses under 200 words`;
+}
+
+export async function chatWithCopilot(message: string, mode: CoachMode = "tactical") {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -45,6 +59,14 @@ export async function chatWithCopilot(message: string) {
   }
 
   const founder = ctx.founder;
+
+  // Pro Gating: Strategic and Support modes are for Pro members only
+  if (mode !== "tactical" && founder.subscriptionStatus !== "active") {
+    return {
+      response: `The ${mode.charAt(0).toUpperCase() + mode.slice(1)} coaching mode is available for Pro members. Upgrade to unlock advanced strategic guidance and mental health support for founders.`,
+    };
+  }
+
   const goal = startup.goals[0];
 
   const usage = await getCopilotUsage(founder.id);
@@ -90,16 +112,7 @@ ${startup.evidence.map((e) => `- ${e.type}: ${e.value ?? "N/A"} ${e.note ? `(${e
 Recent journal:
 ${startup.journalEntries.map((j) => `- [${j.type}] ${j.content}`).join("\n") || "None"}`;
 
-  const systemPrompt = `You are an AI copilot for a solo founder. You have access to their startup data above. Answer their questions using ONLY the data provided. Never fabricate information.
-
-Rules:
-- Reference specific tasks, goals, blockers, or evidence in your answers
-- If the data is insufficient to answer, say so clearly
-- Be concise and actionable
-- Focus on what helps the founder make progress toward their goal
-- If asked "what should I work on today", recommend based on the task list and goal alignment
-- If asked about risks, identify blockers and missing evidence
-- Keep responses under 200 words`;
+  const systemPrompt = getSystemPrompt(mode);
 
   // Save user message
   const recentMessages = await prisma.copilotMessage.findMany({
@@ -135,6 +148,31 @@ AI:`;
 
   const result = await geminiModel.generateContent(prompt);
   const response = result.response.text();
+
+  // Save AI response
+  await prisma.copilotMessage.create({
+    data: {
+      startupId: startup.id,
+      founderId: founder.id,
+      role: "AI",
+      content: response,
+      contextSnapshotId: snapshotId,
+    },
+  });
+
+  await track("copilot_message_sent", {
+    founderId: founder.id,
+    startupId: startup.id,
+    entityId: founderMessage.id,
+  });
+  await track("ai_cost_incurred", {
+    founderId: founder.id,
+    startupId: startup.id,
+    meta: { feature: "copilot", costUsd: Number(estimateCostUSD(prompt).toFixed(4)) },
+  });
+
+  return { response };
+}
 
   // Save AI response
   await prisma.copilotMessage.create({
