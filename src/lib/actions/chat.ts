@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { pusherServer } from "@/lib/pusher";
+import { getPusher } from "@/lib/pusher";
 import { ensureProSubscription } from "@/lib/auth-utils";
 
 export async function listChannels() {
@@ -76,7 +76,10 @@ export async function sendMessage(channelId: string, content: string) {
   });
 
   // Trigger Pusher event
-  await pusherServer.trigger(`channel-${channelId}`, "new-message", message);
+  const pusherServer = getPusher();
+  if (pusherServer) {
+    await pusherServer.trigger(`channel-${channelId}`, "new-message", message);
+  }
 
   return message;
 }

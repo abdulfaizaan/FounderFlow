@@ -2,8 +2,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { razorpay } from "@/lib/razorpay";
-import { stripe } from "@/lib/stripe";
+import { getRazorpay } from "@/lib/razorpay";
+import { getStripe } from "@/lib/stripe";
 import { applySubscriptionStatus } from "@/lib/subscription-status";
 import { env } from "@/lib/env";
 import { revalidatePath } from "next/cache";
@@ -88,6 +88,9 @@ export async function createSubscription(plan: "monthly" | "yearly") {
   }
 
   if (subscription.provider === "stripe") {
+    const stripe = getStripe();
+    if (!stripe) throw new Error("Stripe is not configured");
+
     const priceId =
       plan === "monthly" ? env.STRIPE_PRICE_MONTHLY : env.STRIPE_PRICE_YEARLY;
 
@@ -107,6 +110,9 @@ export async function createSubscription(plan: "monthly" | "yearly") {
   }
 
   // Create or get Razorpay customer
+  const razorpay = getRazorpay();
+  if (!razorpay) throw new Error("Razorpay is not configured");
+
   let customerId = subscription.razorpayCustomerId;
 
   if (!customerId) {
@@ -160,11 +166,17 @@ export async function cancelSubscription() {
   await applySubscriptionStatus(founder.id, "CANCELED");
 
   if (subscription?.provider === "stripe" && subscription.stripeSubscriptionId) {
-    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-      cancel_at_period_end: true,
-    });
+    const stripe = getStripe();
+    if (stripe) {
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+    }
   } else if (subscription?.razorpaySubscriptionId) {
-    await razorpay.subscriptions.cancel(subscription.razorpaySubscriptionId);
+    const razorpay = getRazorpay();
+    if (razorpay) {
+      await razorpay.subscriptions.cancel(subscription.razorpaySubscriptionId);
+    }
   }
 
   revalidatePath("/billing");

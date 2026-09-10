@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { pusherServer } from "@/lib/pusher";
-import { env } from "@/lib/env";
+import { getPusher } from "@/lib/pusher";
 import { auth } from "@clerk/nextjs/server";
 
 export enum NotificationType {
@@ -37,7 +36,10 @@ export async function notify(
 
   // 3. Real-time In-App Update (via Pusher)
   if (prefs.inAppEnabled) {
-    await pusherServer.trigger(`user-${founderId}`, "notification-received", notification);
+    const pusherServer = getPusher();
+    if (pusherServer) {
+      await pusherServer.trigger(`user-${founderId}`, "notification-received", notification);
+    }
   }
 
   // 4. Email Dispatch (Placeholder - In real app use Resend/SendGrid)

@@ -38,17 +38,23 @@ export function ChatWindow({ channelId, channelName }: { channelId: string; chan
     loadMessages();
 
     // Subscribe to Pusher
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-    });
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+    let pusher: InstanceType<typeof Pusher> | null = null;
+    let channel: ReturnType<InstanceType<typeof Pusher>["subscribe"]> | null = null;
 
-    const channel = pusher.subscribe(`channel-${channelId}`);
-    channel.bind("new-message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+    if (pusherKey && pusherCluster) {
+      pusher = new Pusher(pusherKey, { cluster: pusherCluster });
+      channel = pusher.subscribe(`channel-${channelId}`);
+      channel.bind("new-message", (message: Message) => {
+        setMessages((prev) => [...prev, message]);
+      });
+    }
 
     return () => {
-      pusher.unsubscribe(`channel-${channelId}`);
+      if (channel && pusher) {
+        pusher.unsubscribe(`channel-${channelId}`);
+      }
     };
   }, [channelId]);
 

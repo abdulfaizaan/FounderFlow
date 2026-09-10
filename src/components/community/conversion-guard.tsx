@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { auth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
