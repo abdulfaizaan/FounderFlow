@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { send } from "lucide-react";
+import { Send } from "lucide-react";
 import Pusher from "pusher-js";
 import { getMessages, sendMessage } from "@/lib/actions/chat";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { toast } from "sonner";
 interface Message {
   id: string;
   content: string;
-  createdAt: string;
+  createdAt: Date;
   founder: { name: string };
 }
 
@@ -114,7 +114,7 @@ export function ChatWindow({ channelId, channelName }: { channelId: string; chan
           className="flex-1"
         />
         <Button type="submit" size="icon">
-          <send className="h-4 w-4" />
+          <Send className="h-4 w-4" />
         </Button>
       </form>
     </div>

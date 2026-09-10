@@ -16,7 +16,7 @@ export default async function PortfolioPage() {
     where: { founderId: ctx.founder.id },
     include: {
       _count: {
-        select: { goals: true, tasks: true },
+        select: { goals: true },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -64,7 +64,7 @@ export default async function PortfolioPage() {
               </div>
               <div className="p-3 rounded-xl bg-background/50 border">
                 <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Tasks</p>
-                <p className="text-lg font-bold">{startup._count.tasks}</p>
+                <p className="text-lg font-bold">—</p>
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">

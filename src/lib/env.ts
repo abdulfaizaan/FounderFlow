@@ -12,6 +12,10 @@ const envSchema = z.object({
   STRIPE_PRICE_MONTHLY: z.string().min(1),
   STRIPE_PRICE_YEARLY: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url(),
+  PUSHER_APP_ID: z.string().optional().default(""),
+  PUSHER_KEY: z.string().optional().default(""),
+  PUSHER_SECRET: z.string().optional().default(""),
+  PUSHER_CLUSTER: z.string().optional().default(""),
 });
 
 export const env = envSchema.parse(process.env);

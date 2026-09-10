@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckCircle2, FileText, Clock, AlertCircle, Check, X } from "lucide-react";
 import { resolveBlocker, dismissBlocker } from "@/lib/actions/blockers";
 import { useTransition } from "react";

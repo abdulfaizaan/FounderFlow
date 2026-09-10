@@ -316,7 +316,7 @@ export default async function TodayPage({
             </div>
           </div>
         ) : (
-          <StandupForm existingSstandup={todayStandup} />
+          <StandupForm existingStandup={todayStandup} />
         )}
         <EvidenceForm />
         <RevenueEvidenceForm />

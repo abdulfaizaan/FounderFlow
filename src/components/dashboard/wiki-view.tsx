@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getWikiStructure, createWikiFolder, updateWikiFolder, deleteWikiFolder, createWikiPage, updateWikiPage, deleteWikiPage } from "@/lib/actions/wiki";
-import { getActiveStartupIdForUser } from "@/lib/startup-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,42 +10,27 @@ import { Folder, FileText, Plus, Trash, Edit2, Save, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { BookOpen } from "lucide-react";
 
-export default function WikiPage() {
+export function WikiView({ initialStructure, startupId }: { initialStructure: any, startupId: string }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [structure, setStructure] = useState<{ folders: any[]; pages: any[] }>({ folders: [], pages: [] });
+  const [structure, setStructure] = useState<{ folders: any[]; pages: any[] }>(initialStructure);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [editTitle, setEditTitle] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadWiki() {
-      setIsLoading(true);
-      try {
-        const ctx = await getActiveStartupIdForUser(null as any); // simplified for now
-        if (ctx) {
-          const data = await getWikiStructure(ctx.startupId);
-          setStructure(data);
-        }
-      } catch (e) {
-        toast.error("Failed to load wiki");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadWiki();
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateFolder = async () => {
     const name = prompt("Folder name:");
     if (!name) return;
     try {
-      const ctx = await getActiveStartupIdForUser(null as any);
-      if (ctx) await createWikiFolder({ name }, ctx.startupId);
+      await createWikiFolder({ name }, startupId);
       toast.success("Folder created");
+      const data = await getWikiStructure(startupId);
+      setStructure(data);
     } catch (e) {
       toast.error("Failed to create folder");
     }
@@ -56,12 +40,11 @@ export default function WikiPage() {
     const title = prompt("Page title:");
     if (!title) return;
     try {
-      const ctx = await getActiveStartupIdForUser(null as any);
-      if (ctx) {
-        const page = await createWikiPage({ title, content: "# New Page\nStart writing...", folderId: undefined }, ctx.startupId);
-        setActivePageId(page.id);
-      }
+      const page = await createWikiPage({ title, content: "# New Page\\nStart writing...", folderId: undefined }, startupId);
+      setActivePageId(page.id);
       toast.success("Page created");
+      const data = await getWikiStructure(startupId);
+      setStructure(data);
     } catch (e) {
       toast.error("Failed to create page");
     }
@@ -83,17 +66,14 @@ export default function WikiPage() {
       await updateWikiPage(activePageId, { title: editTitle, content: editContent });
       toast.success("Page saved");
       setIsEditing(false);
-      // Refresh
-      const ctx = await getActiveStartupIdForUser(null as any);
-      if (ctx) setStructure(await getWikiStructure(ctx.startupId));
+      const data = await getWikiStructure(startupId);
+      setStructure(data);
     } catch (e) {
       toast.error("Failed to save page");
     }
   };
 
   const activePage = structure.pages.find(p => p.id === activePageId);
-
-  if (isLoading) return <div className="flex items-center justify-center h-screen">Loading Wiki...</div>;
 
   return (
     <div className="flex h-[calc(100vh-120px)] gap-6">

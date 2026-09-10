@@ -421,3 +421,42 @@ model NotificationPreference {
   categorySettings Json    @default("{\"MENTION\": true, \"REPLY\": true, \"EVENT\": true, \"MILESTONE\": true, \"SYSTEM\": true}")
   founder          Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
 }
+
+model Lead {
+  id        String   @id @default(cuid())
+  startupId String
+  name      String
+  email     String
+  status    String   @default("NEW")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startupId])
+}
+
+model WikiFolder {
+  id        String     @id @default(cuid())
+  startupId String
+  name      String
+  parentId  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  pages     WikiPage[]
+
+  @@index([startupId])
+}
+
+model WikiPage {
+  id        String      @id @default(cuid())
+  startupId String
+  title     String
+  content   String      @db.Text
+  folderId  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  folder    WikiFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([startupId])
+  @@index([folderId])
+}

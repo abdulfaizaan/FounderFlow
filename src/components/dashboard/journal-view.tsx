@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   createJournalEntry,
   deleteJournalEntry,
-  JOURNAL_TYPES,
 } from "@/lib/actions/journal";
+import { JOURNAL_TYPES } from "@/lib/constants/journal";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, PenLine, Lightbulb, GitBranch, BookOpen, Trophy, Flame, Users } from "lucide-react";
 

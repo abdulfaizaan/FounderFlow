@@ -4,28 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { chatWithCopilot } from "@/lib/actions/copilot";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, Sparkles } from "lucide-react";
-
-interface Message {
-  role: "FOUNDER" | "AI";
-  content: string;
-}
-
-interface CopilotChatProps {
-  history: Message[];
-  usage?: { used: number; limit: number };
-}
-
-const SUGGESTED_PROMPTS = [
-  "What should I work on today?",
-  "I have 3 hours, what should I do?",
-  "Why am I not making progress?",
-  "What's my biggest risk?",
-];
-
-import { useState, useRef, useEffect } from "react";
-import { chatWithCopilot } from "@/lib/actions/copilot";
-import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +25,7 @@ const MODE_LABELS: Record<CoachMode, string> = {
   support: "Support",
 };
 
-const SUGGESTED_PROMPTS = {
+const SUGGESTED_PROMPTS: Record<CoachMode, string[]> = {
   tactical: ["What should I work on today?", "I have 3 hours, what should I do?"],
   strategic: ["Why am I not making progress?", "What's my biggest risk?"],
   support: ["How do I deal with burnout?", "I'm feeling overwhelmed, help me prioritize."],
@@ -63,6 +41,8 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const atLimit = !!usage && usage.used >= usage.limit;
 
   const handleSend = async (text?: string) => {
     const message = text || input;
@@ -87,8 +67,6 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
       setLoading(false);
     }
   };
-
-  const atLimit = !!usage && usage.used >= usage.limit;
 
   return (
     <motion.div

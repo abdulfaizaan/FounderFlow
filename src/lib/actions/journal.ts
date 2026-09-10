@@ -5,16 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveStartupIdForUser } from "@/lib/startup-context";
 import { revalidatePath } from "next/cache";
 
-export const JOURNAL_TYPES = [
-  "IDEA",
-  "DECISION",
-  "LESSON",
-  "WIN",
-  "FAILURE",
-  "CUSTOMER_INSIGHT",
-] as const;
-
-export type JournalType = (typeof JOURNAL_TYPES)[number];
+import { JOURNAL_TYPES, JournalType } from "@/lib/constants/journal";
 
 export async function createJournalEntry(data: {
   type: JournalType;

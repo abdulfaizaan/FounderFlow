@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getForumCategories, createForumPost } from "@/lib/actions/forum";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ export default function NewPostPage() {
           <label className="text-sm font-medium">Category</label>
           <Select
             value={formData.categoryId}
-            onValueChange={(val) => setFormData({ ...formData, categoryId: val })}
+            onValueChange={(val: string) => setFormData({ ...formData, categoryId: val })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a category" />

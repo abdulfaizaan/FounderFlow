@@ -47,6 +47,7 @@ export default async function PlanPage({
               id: t.id,
               title: t.title,
               status: t.status,
+              priority: t.priority,
               estimateMinutes: t.estimateMinutes,
               dueDate: t.dueDate,
             })),

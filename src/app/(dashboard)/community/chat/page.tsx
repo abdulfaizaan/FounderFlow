@@ -17,7 +17,7 @@ export default function ChatPage() {
 }
 
 function ChatContent() {
-  const [channels, setChannels] = useState<{ id: string; name: string; description?: string }[]>([]);
+  const [channels, setChannels] = useState<{ id: string; name: string; description: string | null }[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

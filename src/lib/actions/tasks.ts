@@ -121,7 +121,7 @@ export async function updateTask(
       ...data,
       dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
     },
-  });  });
+  });
 
   if (data.status === "IN_PROGRESS") {
     await track("recommendation_started", {

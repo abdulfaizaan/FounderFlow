@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { getLeads, createLead, updateLeadStatus, deleteLead } from "@/lib/actions/crm";
-import { getActiveStartupIdForUser } from "@/lib/startup-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -15,42 +14,21 @@ import { UserPlus, Trash2, ArrowRight, ArrowLeft } from "lucide-react";
 
 const STATUSES = ["Lead", "Tester", "Customer"];
 
-export default function CRMPage() {
-  const [leads, setLeads] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function CRMView({ initialLeads, startupId }: { initialLeads: any[], startupId: string }) {
+  const [leads, setLeads] = useState<any[]>(initialLeads);
+  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", status: "Lead", notes: "" });
 
-  useEffect(() => {
-    async function loadLeads() {
-      setIsLoading(true);
-      try {
-        const ctx = await getActiveStartupIdForUser(null as any);
-        if (ctx) {
-          const data = await getLeads(ctx.startupId);
-          setLeads(data);
-        }
-      } catch (e) {
-        toast.error("Failed to load leads");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadLeads();
-  }, []);
-
   async function handleSubmit() {
     setIsSubmitting(true);
     try {
-      const ctx = await getActiveStartupIdForUser(null as any);
-      if (!ctx) throw new Error("No active startup found");
-
-      await createLead(formData, ctx.startupId);
+      await createLead(formData, startupId);
       toast.success("Lead added!");
       setIsModalOpen(false);
       setFormData({ name: "", email: "", status: "Lead", notes: "" });
-      const data = await getLeads(ctx.startupId);
+      const data = await getLeads(startupId);
       setLeads(data);
     } catch (e: any) {
       toast.error(e.message || "Failed to add lead");
@@ -68,11 +46,8 @@ export default function CRMPage() {
     try {
       await updateLeadStatus(id, STATUSES[nextIndex]);
       toast.success(`Moved to ${STATUSES[nextIndex]}`);
-      const ctx = await getActiveStartupIdForUser(null as any);
-      if (ctx) {
-        const data = await getLeads(ctx.startupId);
-        setLeads(data);
-      }
+      const data = await getLeads(startupId);
+      setLeads(data);
     } catch (e: any) {
       toast.error("Failed to update status");
     }
@@ -88,8 +63,6 @@ export default function CRMPage() {
       toast.error("Failed to delete lead");
     }
   }
-
-  if (isLoading) return <div className="flex items-center justify-center h-screen">Loading CRM...</div>;
 
   return (
     <div className="flex flex-col gap-8">

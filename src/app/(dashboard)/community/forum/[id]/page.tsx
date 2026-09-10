@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowUpCircle, Send } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 function ReplyItem({ reply, depth = 0 }: { reply: any; depth?: number }) {
   const [content, setContent] = useState("");
@@ -97,7 +99,7 @@ export default function ForumThreadPage() {
     try {
       const result = await upvotePost(id as string);
       setVoteStatus(result.upvoted);
-      setThread(prev => prev ? { ...prev, _count: { ...prev._count, votes: result.upvoted ? prev._count.votes + 1 : prev._count.votes - 1 } } : null);
+      setThread((prev: any) => prev ? { ...prev, _count: { ...prev._count, votes: result.upvoted ? prev._count.votes + 1 : prev._count.votes - 1 } } : null);
     } catch (e: any) {
       toast.error(e.message || "Failed to upvote");
     }

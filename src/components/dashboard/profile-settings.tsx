@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
-import { getActiveStartupIdForUser } from "@/lib/startup-context";
 import { motion } from "framer-motion";
 import { Save, User, Building2, Clock } from "lucide-react";
 

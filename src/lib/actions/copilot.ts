@@ -9,9 +9,6 @@ import { track } from "@/lib/analytics";
 import { getCopilotUsage, estimateCostUSD } from "@/lib/usage";
 import { revalidatePath } from "next/cache";
 
-export async function chatWithCopilot(message: string) {
-// ... existing chatWithCopilot implementation ...
-
 type CoachMode = "tactical" | "strategic" | "support";
 
 function getSystemPrompt(mode: CoachMode) {
@@ -174,33 +171,6 @@ AI:`;
   return { response };
 }
 
-  // Save AI response
-  await prisma.copilotMessage.create({
-    data: {
-      startupId: startup.id,
-      founderId: founder.id,
-      role: "AI",
-      content: response,
-      contextSnapshotId: snapshotId,
-    },
-  });
-
-  await track("copilot_message_sent", {
-    founderId: founder.id,
-    startupId: startup.id,
-    entityId: founderMessage.id,
-  });
-  await track("ai_cost_incurred", {
-    founderId: founder.id,
-    startupId: startup.id,
-    meta: { feature: "copilot", costUsd: Number(estimateCostUSD(prompt).toFixed(4)) },
-  });
-
-  return { response };
-}
-
-// ... after getCopilotHistory ...
-
 export async function proposeSchedule() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
@@ -287,4 +257,3 @@ export async function applyProposedSchedule(schedule: { taskId: string; startTim
   revalidatePath("/today");
   return { success: true };
 }
-

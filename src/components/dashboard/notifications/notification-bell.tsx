@@ -112,7 +112,7 @@ export function NotificationBell() {
             )}
           </div>
         </ScrollArea>
-      </div>
+      </PopoverContent>
     </Popover>
   );
 }

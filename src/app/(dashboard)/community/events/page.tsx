@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, MapPin, Video } from "lucide-react";
 import { ConversionGuard } from "@/components/community/conversion-guard";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function EventsPage() {
   return (
@@ -164,7 +166,7 @@ function EventsContent() {
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(date) => setSelectedDate(date || new Date())}
+              onSelect={(date: Date | undefined) => setSelectedDate(date || new Date())}
               className="rounded-md"
             />
           </Card>

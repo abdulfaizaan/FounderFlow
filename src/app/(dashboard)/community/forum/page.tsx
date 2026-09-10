@@ -32,7 +32,7 @@ function ForumContent() {
       try {
         const cats = await getForumCategories();
         setCategories(cats);
-        const { posts } = await getForumThreads({ categoryId: activeCategory, search });
+        const { posts } = await getForumThreads({ categoryId: activeCategory ?? undefined, search });
         setThreads(posts);
       } catch (e) {
         console.error("Failed to load forum", e);
