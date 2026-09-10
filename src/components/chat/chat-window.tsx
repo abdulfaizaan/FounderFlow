@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send } from "lucide-react";
+import { Send, Menu } from "lucide-react";
 import Pusher from "pusher-js";
 import { getMessages, sendMessage } from "@/lib/actions/chat";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ interface Message {
   founder: { name: string };
 }
 
-export function ChatWindow({ channelId, channelName }: { channelId: string; channelName: string }) {
+export function ChatWindow({ channelId, channelName, onOpenChannels }: { channelId: string; channelName: string; onOpenChannels?: () => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -81,7 +81,10 @@ export function ChatWindow({ channelId, channelName }: { channelId: string; chan
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b bg-muted/20">
+      <div className="p-4 border-b bg-muted/20 flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={onOpenChannels} aria-label="Open channels">
+          <Menu className="h-4 w-4" />
+        </Button>
         <h2 className="text-lg font-semibold">{channelName}</h2>
       </div>
 
