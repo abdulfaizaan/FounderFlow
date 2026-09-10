@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { FeedbackDialog } from "@/components/dashboard/feedback-dialog";
 
 export default async function DashboardLayout({
   children,
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell startups={startups} activeStartupId={activeStartupId}>
       {children}
+      <FeedbackDialog />
     </DashboardShell>
   );
 }

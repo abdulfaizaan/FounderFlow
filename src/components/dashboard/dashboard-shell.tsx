@@ -117,12 +117,12 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border pt-4 px-2 flex items-center justify-between gap-2">
+      <div className="border-t border-sidebar-border pt-4 px-2 space-y-3">
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <NotificationBell />
         </div>
-        <div className="min-w-0 flex-1 overflow-hidden">
+        <div>
           <UserButton showName />
         </div>
       </div>
