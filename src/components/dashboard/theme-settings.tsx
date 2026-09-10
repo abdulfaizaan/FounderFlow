@@ -21,7 +21,7 @@ export function ThemeSettings() {
       <p className="text-sm text-muted-foreground mt-1">
         Choose how FounderFlow looks on this device.
       </p>
-      <div className="grid grid-cols-3 gap-3 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
         {options.map((o) => {
           const Icon = o.icon;
           const active = mode === o.value;

@@ -79,7 +79,7 @@ export function HistoryView({ weeks }: { weeks: WeekBucket[] }) {
 
   return (
     <div className="space-y-10">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat label="Tasks done" value={totals.tasksDone} Icon={CheckCircle2} accent="text-emerald-600" delay={0} />
         <Stat label="Evidence entries" value={totals.evidence} Icon={MessageSquare} accent="text-[#0099ff]" delay={60} />
         <Stat label="Revenue (12 wks)" value={`$${totals.revenue.toFixed(0)}`} Icon={DollarSign} accent="text-amber-600" delay={120} />

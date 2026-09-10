@@ -37,7 +37,7 @@ export function WeekSummary({ tasksDone, tasksTotal, evidenceCount, blockers, av
         This Week
       </h3>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="animate-rise rounded-xl bg-muted/50 p-4 text-center"
           style={{ animationDelay: "520ms" }}>
           <CheckCircle2 className="h-5 w-5 text-success mx-auto mb-2" />

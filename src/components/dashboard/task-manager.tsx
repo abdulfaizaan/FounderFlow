@@ -156,7 +156,7 @@ export function TaskManager({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold">{goal.title}</h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -164,7 +164,7 @@ export function TaskManager({
             {milestones.reduce((a, m) => a + m.tasks.length, 0)} tasks
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -219,7 +219,7 @@ export function TaskManager({
               )}
               {sortedTasks.map((t) => {
                 return (
-                  <div key={t.id} className="flex items-center gap-2 rounded-xl border bg-background/60 px-3 py-2">
+                  <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-xl border bg-background/60 px-3 py-2">
                     {editingId === t.id ? (
                       <>
                         <input
@@ -314,7 +314,7 @@ export function TaskManager({
               })}
             </div>
 
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
               <input
                 value={newTaskTitle[m.id] ?? ""}
                 onChange={(e) => setNewTaskTitle((s) => ({ ...s, [m.id]: e.target.value }))}
