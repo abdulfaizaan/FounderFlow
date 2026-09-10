@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getForumCategories, getForumThreads } from "@/lib/actions/forum";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, ArrowUpCircle, Search } from "lucide-react";
+import { MessageSquare, ArrowUpCircle, Search, Menu } from "lucide-react";
 import { motion } from "framer-motion";
 import { ConversionGuard } from "@/components/community/conversion-guard";
+import { PageSidebar } from "@/components/ui/page-sidebar";
 
 export default function ForumPage() {
   return (
@@ -20,12 +22,45 @@ export default function ForumPage() {
   );
 }
 
+function CategorySidebar({ categories, activeCategory, onSelect }: {
+  categories: { id: string; name: string; slug: string }[];
+  activeCategory: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  return (
+    <div className="p-4 bg-muted/30 rounded-xl border">
+      <h3 className="font-semibold mb-3">Categories</h3>
+      <div className="space-y-1">
+        <Button
+          variant={!activeCategory ? "secondary" : "ghost"}
+          className="w-full justify-start"
+          onClick={() => onSelect(null)}
+        >
+          All Discussions
+        </Button>
+        {categories.map((cat) => (
+          <Button
+            key={cat.id}
+            variant={activeCategory === cat.id ? "secondary" : "ghost"}
+            className="w-full justify-start"
+            onClick={() => onSelect(cat.id)}
+          >
+            {cat.name}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ForumContent() {
+  const router = useRouter();
   const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [threads, setThreads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function loadForum() {
@@ -45,33 +80,22 @@ function ForumContent() {
 
   return (
     <div className="flex gap-6 h-full">
-      <aside className="w-64 flex flex-col gap-4">
-        <div className="p-4 bg-muted/30 rounded-xl border">
-          <h3 className="font-semibold mb-3">Categories</h3>
-          <div className="space-y-1">
-            <Button
-              variant={!activeCategory ? "secondary" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => setActiveCategory(null)}
-            >
-              All Discussions
-            </Button>
-            {categories.map((cat) => (
-              <Button
-                key={cat.id}
-                variant={activeCategory === cat.id ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setActiveCategory(cat.id)}
-              >
-                {cat.name}
-              </Button>
-            ))}
-          </div>
-        </div>
+      <aside className="hidden md:flex w-64 flex-col gap-4">
+        <CategorySidebar categories={categories} activeCategory={activeCategory} onSelect={(id) => setActiveCategory(id)} />
       </aside>
+
+      <PageSidebar label="Categories" open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <div className="flex w-64 flex-col gap-4">
+          <CategorySidebar categories={categories} activeCategory={activeCategory}
+            onSelect={(id) => { setActiveCategory(id); setSidebarOpen(false); }} />
+        </div>
+      </PageSidebar>
 
       <main className="flex-1 flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
+          <Button variant="outline" size="sm" className="md:hidden shrink-0" onClick={() => setSidebarOpen(true)}>
+            <Menu className="h-4 w-4" /> Categories
+          </Button>
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -81,7 +105,7 @@ function ForumContent() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button onClick={() => window.location.href = "/forum/new"}>
+          <Button onClick={() => router.push("/forum/new")}>
             New Post
           </Button>
         </div>
@@ -107,7 +131,7 @@ function ForumContent() {
                     <Card className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group">
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <Badge variant="outline">{post.category.name}</Badge>
                             <span className="text-xs text-muted-foreground">
                               Posted by {post.founder.name}
@@ -120,7 +144,7 @@ function ForumContent() {
                             {post.content}
                           </p>
                         </div>
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center gap-1 shrink-0">
                           <div className="flex items-center gap-1 text-sm font-medium">
                             <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
                             {post._count.votes}
