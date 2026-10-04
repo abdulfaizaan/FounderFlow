@@ -6,6 +6,7 @@ import { getPusher } from "@/lib/pusher";
 import { ensureProSubscription } from "@/lib/auth-utils";
 
 export async function listChannels() {
+  await ensureProSubscription();
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -35,6 +36,7 @@ export async function listChannels() {
 }
 
 export async function getMessages(channelId: string) {
+  await ensureProSubscription();
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 

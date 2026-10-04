@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { generateWeeklyReview, trackReviewOpened } from "@/lib/actions/review";
 import { createTask } from "@/lib/actions/tasks";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Sparkles, RefreshCw, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { RefreshCw, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface MilestoneOption {
   id: string;
@@ -15,7 +17,6 @@ interface MilestoneOption {
 interface WeeklyReviewProps {
   review: {
     completedSummary: string | null;
-    recommendedFocus: string | null;
     createdAt: Date;
   } | null;
   milestones?: MilestoneOption[];
@@ -42,12 +43,11 @@ export function WeeklyReview({ review: existingReview, milestones = [] }: Weekly
       const result = await generateWeeklyReview();
       setReview({
         completedSummary: result.reviewText,
-        recommendedFocus: "See full review",
         createdAt: new Date(),
       });
       router.refresh();
-    } catch (error) {
-      console.error("Failed to generate review:", error);
+    } catch {
+      toast.error("Could not generate review. Try again.");
     } finally {
       setLoading(false);
     }
@@ -59,35 +59,30 @@ export function WeeklyReview({ review: existingReview, milestones = [] }: Weekly
     try {
       await createTask({ milestoneId, title: focus.trim() });
       setFocus("");
+      toast.success("Task added to your plan");
       router.refresh();
-    } catch (error) {
-      console.error("Failed to add task:", error);
+    } catch {
+      toast.error("Could not add task");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="rounded-2xl border bg-card p-6"
-    >
+    <div className="rounded-xl border bg-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold">Weekly Review</h3>
-        </div>
-        <motion.button
-          onClick={handleGenerate}
-          disabled={loading}
-          whileTap={{ scale: 0.95 }}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all shadow-sm shadow-primary/20 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Generating..." : review ? "Refresh" : "Generate"}
-        </motion.button>
+        <p className="text-sm text-muted-foreground">
+          {review?.createdAt
+            ? `Generated ${new Date(review.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}`
+            : "A weekly summary of what you completed and where to focus next."}
+        </p>
+        <Button size="sm" onClick={handleGenerate} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          {loading ? "Generating…" : review ? "Refresh" : "Generate"}
+        </Button>
       </div>
 
       {review?.completedSummary ? (
@@ -120,23 +115,24 @@ export function WeeklyReview({ review: existingReview, milestones = [] }: Weekly
                 </option>
               ))}
             </select>
-            <input
+            <Input
               value={focus}
               onChange={(e) => setFocus(e.target.value)}
               placeholder="Task from your review, e.g. Interview 3 lost leads"
-              className="flex-1 px-3 py-2 text-sm rounded-lg border bg-background"
+              className="flex-1"
             />
-            <button
+            <Button
+              size="sm"
               onClick={handleAddFocus}
               disabled={saving || !focus.trim() || !milestoneId}
-              className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+              className="self-start sm:self-auto"
             >
-              <Plus className="h-3 w-3" />
-              {saving ? "Adding..." : "Add to plan"}
-            </button>
+              <Plus className="h-3.5 w-3.5" />
+              {saving ? "Adding…" : "Add to plan"}
+            </Button>
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

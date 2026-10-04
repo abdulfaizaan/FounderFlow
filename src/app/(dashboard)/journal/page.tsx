@@ -1,32 +1,42 @@
 import { prisma } from "@/lib/prisma";
 import { getActiveStartup } from "@/lib/startup-context";
-import { JournalView } from "@/components/dashboard/journal-view";
+import { getWikiStructure } from "@/lib/actions/wiki";
+import { NotesView } from "@/components/dashboard/notes-view";
+import { Reveal } from "@/components/reveal";
 
 export const dynamic = "force-dynamic";
 
 export default async function JournalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ startup?: string }>;
+  searchParams: Promise<{ startup?: string; tab?: string }>;
 }) {
-  const { startup: startupParam } = await searchParams;
+  const { startup: startupParam, tab } = await searchParams;
   const { startup } = await getActiveStartup(startupParam);
 
-  const entries = await prisma.journalEntry.findMany({
-    where: { startupId: startup.id },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+  const [entries, wiki] = await Promise.all([
+    prisma.journalEntry.findMany({
+      where: { startupId: startup.id },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
+    getWikiStructure(startup.id),
+  ]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Journal</h1>
+      <Reveal>
+        <h1 className="text-3xl font-bold tracking-tight">Notes</h1>
         <p className="text-muted-foreground mt-1">
-          {startup.name} — capture wins, lessons, decisions, and customer insights.
+          {startup.name} — journal captures and your team&apos;s living knowledge.
         </p>
-      </div>
-      <JournalView entries={entries} />
+      </Reveal>
+      <NotesView
+        entries={entries}
+        initialStructure={wiki}
+        startupId={startup.id}
+        defaultTab={tab === "wiki" ? "wiki" : "journal"}
+      />
     </div>
   );
 }

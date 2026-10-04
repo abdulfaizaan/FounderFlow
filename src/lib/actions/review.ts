@@ -3,12 +3,14 @@
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getActiveStartupIdForUser } from "@/lib/startup-context";
-import { geminiModel } from "@/lib/gemini";
+import { callAI } from "@/lib/ai-client";
 import { track } from "@/lib/analytics";
 import { estimateCostUSD } from "@/lib/usage";
+import { ensureProSubscription } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 
 export async function generateWeeklyReview() {
+  await ensureProSubscription();
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -104,8 +106,8 @@ Rules:
 - Keep it under 3 minutes to read
 - Be direct and specific`;
 
-  const result = await geminiModel.generateContent(prompt);
-  const reviewText = result.response.text();
+  const result = await callAI(prompt);
+  const reviewText = result;
 
   await track("weekly_review_generated", {
     founderId: ctx.founder.id,

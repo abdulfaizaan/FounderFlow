@@ -42,7 +42,7 @@ export async function createMilestone(data: {
   });
 
   revalidatePath("/today");
-  revalidatePath("/plan");
+  
   return milestone;
 }
 

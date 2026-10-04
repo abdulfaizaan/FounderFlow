@@ -35,10 +35,10 @@ const STATUSES = ["TODO", "IN_PROGRESS", "DONE", "BLOCKED", "SNOOZED"];
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   TODO: { label: "Todo", className: "text-muted-foreground" },
-  IN_PROGRESS: { label: "In progress", className: "text-[#0099ff]" },
-  DONE: { label: "Done", className: "text-[#19a874]" },
+  IN_PROGRESS: { label: "In progress", className: "text-accent" },
+  DONE: { label: "Done", className: "text-primary" },
   BLOCKED: { label: "Blocked", className: "text-destructive" },
-  SNOOZED: { label: "Snoozed", className: "text-amber-600" },
+  SNOOZED: { label: "Snoozed", className: "text-warning-dark" },
   ARCHIVED: { label: "Archived", className: "text-muted-foreground line-through" },
 };
 
@@ -145,9 +145,9 @@ export function TaskManager({
   return (
     <div className="space-y-6">
       {completionNote && (
-        <div className="rounded-2xl border border-[#19a874]/30 bg-[#19a874]/5 p-4 flex items-start justify-between gap-3">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start justify-between gap-3">
           <p className="text-sm flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-[#19a874] shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
             {completionNote}
           </p>
           <button onClick={() => setCompletionNote(null)} className="text-muted-foreground hover:text-foreground">
@@ -203,11 +203,11 @@ export function TaskManager({
         });
 
         return (
-          <section key={m.id} className="rounded-2xl border bg-card p-5">
+          <section key={m.id} className="rounded-xl border bg-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-semibold">{m.title}</h3>
               {allDone && (
-                <span className="inline-flex items-center gap-1 text-xs font-medium bg-[#19a874]/10 text-[#0f7a54] px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="h-3 w-3" /> Complete
                 </span>
               )}
@@ -259,7 +259,7 @@ export function TaskManager({
                           <div className="flex items-center gap-2">
                             <span className={`h-2 w-2 rounded-full shrink-0 ${
                               t.priority === "HIGH" ? "bg-destructive" :
-                              t.priority === "MEDIUM" ? "bg-amber-500" : "bg-muted-foreground"
+                              t.priority === "MEDIUM" ? "bg-warning" : "bg-muted-foreground"
                             }`} />
                             <p className={`text-sm font-medium truncate ${STATUS_META[t.status]?.className ?? ""}`}>
                               {t.title}
@@ -274,7 +274,7 @@ export function TaskManager({
                           <button
                             onClick={() => snooze(t.id)}
                             disabled={t.status === "DONE" || isPending}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 transition-colors"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-warning-dark hover:bg-warning/10 transition-colors"
                             title="Snooze to tomorrow"
                           >
                             <AlarmClock className="h-3.5 w-3.5" />
@@ -300,7 +300,7 @@ export function TaskManager({
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            onClick={() => deleteTask(t.id)}
+                            onClick={() => setStatus(t.id, "ARCHIVED", m.id, m.title)}
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
                             title="Archive task"
                             >
@@ -340,7 +340,7 @@ export function TaskManager({
         );
       })}
 
-      <section className="rounded-2xl border border-dashed bg-card/40 p-4">
+      <section className="rounded-xl border border-dashed bg-card/40 p-4">
         <h3 className="text-sm font-semibold mb-3">New milestone</h3>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input

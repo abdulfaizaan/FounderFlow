@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { proposeSchedule, applyProposedSchedule } from "@/lib/actions/copilot";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Sparkles, Check, X, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 

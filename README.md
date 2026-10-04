@@ -1,11 +1,15 @@
-# FounderFlow 🚀
+# FounderFlow
 
-FounderFlow is a comprehensive operating system for solo founders. It bridges the gap between high-level goal setting and daily execution, providing a structured environment to manage multiple startups, track progress, and optimize daily focus using AI.
+**Turn startup uncertainty into daily progress.**
+
+FounderFlow is an AI-powered operating system for solo founders — the connective tissue between a long-term goal and what actually gets shipped today. Every morning it surfaces the single highest-leverage task for your current goal, schedules it around your real capacity, and tracks the evidence that proves you're moving forward.
+
+No dashboard dumps, no busywork. One goal, one plan, one founder who ships.
 
 ## 🎯 Project Scope
-The project is divided into two primary layers:
-1. **Founder OS (Free):** A high-productivity toolset designed to acquire users and build habits. It focuses on the "solo" part of the journey: stand-ups, task management, and scheduling.
-2. **Founder Community (Paid):** A monetization layer providing access to a private network of founders, a personal AI coach, and shared resources.
+The project ships in two layers:
+1. **Founder OS (Free):** The daily execution system — stand-ups, AI recommendations, time-blocked scheduling, and evidence tracking. Built to acquire users and build the shipping habit.
+2. **Founder Community (Paid):** The monetization layer — a private network of founders, a personal AI coach, and shared resources.
 
 ---
 

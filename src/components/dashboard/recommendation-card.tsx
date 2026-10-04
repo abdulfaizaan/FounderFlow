@@ -4,7 +4,8 @@ import { useState } from "react";
 import { completeTask, scheduleTask, updateTask } from "@/lib/actions/tasks";
 import { dismissRecommendation, snoozeRecommendation } from "@/lib/actions/dashboard";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
+import { CardHelp } from "./card-help";
 import {
   CheckCircle2,
   Clock,
@@ -112,23 +113,27 @@ export function RecommendationCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -2 }}
-      className={`rounded-2xl border p-5 ${
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className={`rounded-xl border p-5 transition-colors duration-150 ${
         isPrimary
-          ? "bg-card shadow-lg shadow-primary/5 border-primary/20"
-          : "bg-card/60 border-border hover:bg-card"
+          ? "bg-card border-primary/20 hover:border-primary/30"
+          : "bg-card/60 border-border hover:border-primary/15 hover:bg-card"
       }`}
     >
       {isPrimary && (
         <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1 text-xs font-medium bg-primary text-primary-foreground px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-md">
             <Sparkles className="h-3 w-3" />
             Recommended
           </span>
           <span className="text-xs text-muted-foreground">{rec.confidence}% confidence</span>
+          <CardHelp title="Recommendation">
+            Confidence is how sure the ranking engine is that this is your best next task.
+            Complete it, schedule it, snooze it, or dismiss it — each action improves future
+            picks.
+          </CardHelp>
         </div>
       )}
 
@@ -160,7 +165,7 @@ export function RecommendationCard({
           {evidence.slice(0, 4).map((e) => (
             <span
               key={e.id}
-              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-primary/10 text-primary"
               title={e.note ?? undefined}
             >
               <BadgeCheck className="h-3 w-3" />
@@ -189,7 +194,7 @@ export function RecommendationCard({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={done}
-              className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+              className="btn-press inline-flex items-center gap-1 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <CheckCircle2 className="h-4 w-4" />
               Do it now
@@ -225,12 +230,12 @@ export function RecommendationCard({
           </div>
 
           {scheduling && (
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-2">
               <input
                 type="datetime-local"
                 value={slot}
                 onChange={(e) => setSlot(e.target.value)}
-                className="flex-1 rounded-md border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
               <button
                 onClick={save}
@@ -243,12 +248,12 @@ export function RecommendationCard({
           )}
 
           {editing && (
-            <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+            <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Task title"
-                className="w-full rounded-md border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
               <div className="flex gap-2">
                 <input
@@ -258,13 +263,13 @@ export function RecommendationCard({
                   value={estimate}
                   onChange={(e) => setEstimate(Number(e.target.value))}
                   placeholder="Minutes"
-                  className="w-28 rounded-md border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                  className="w-28 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                 />
                 <input
                   type="date"
                   value={due}
                   onChange={(e) => setDue(e.target.value)}
-                  className="flex-1 rounded-md border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+                  className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
                 />
               </div>
               <div className="flex justify-end">

@@ -1,116 +1,139 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Save, User, Building2, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Save, Loader2 } from "lucide-react";
+import { getProfile, updateProfile } from "@/lib/actions/startups";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export function ProfileSettings() {
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [founderData, setFounderData] = useState({ name: "", timezone: "", hoursPerDay: 8 });
   const [startupData, setStartupData] = useState({ name: "", industry: "", website: "", description: "" });
 
-  // In a real app, we'd fetch this from a server component or a hook
-  // For now, we'll assume the data is passed or fetched in a useEffect
+  useEffect(() => {
+    getProfile()
+      .then((profile) => {
+        if (profile) {
+          setFounderData(profile.founder);
+          if (profile.startup) setStartupData(profile.startup);
+        }
+        setFetching(false);
+      })
+      .catch(() => {
+        toast.error("Could not load your profile");
+        setFetching(false);
+      });
+  }, []);
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Call server actions to update founder and startup
-      // await updateFounderProfile(founderData);
-      // await updateStartupDetails(startupData);
-    } catch (error) {
-      console.error("Save failed:", error);
+      await updateProfile({
+        name: founderData.name,
+        timezone: founderData.timezone,
+        hoursPerDay: founderData.hoursPerDay,
+        startupName: startupData.name,
+        industry: startupData.industry,
+        website: startupData.website,
+        description: startupData.description,
+      });
+      toast.success("Profile updated");
+    } catch {
+      toast.error("Failed to save changes");
     } finally {
       setLoading(false);
     }
   };
 
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-card p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <User className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-bold">Personal Profile</h3>
-        </div>
+      <section className="rounded-xl border bg-card p-6">
+        <h3 className="text-lg font-semibold mb-6">Personal profile</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Full Name</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="full-name">Full name</Label>
+            <Input
+              id="full-name"
               value={founderData.name}
-              onChange={(e) => setFounderData(p => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setFounderData((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Timezone</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="timezone">Timezone</Label>
+            <Input
+              id="timezone"
               value={founderData.timezone}
-              onChange={(e) => setFounderData(p => ({ ...p, timezone: e.target.value }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setFounderData((p) => ({ ...p, timezone: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Daily Focus Hours</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="hours">Daily focus hours</Label>
+            <Input
+              id="hours"
               type="number"
               value={founderData.hoursPerDay}
-              onChange={(e) => setFounderData(p => ({ ...p, hoursPerDay: Number(e.target.value) }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setFounderData((p) => ({ ...p, hoursPerDay: Number(e.target.value) }))}
             />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="rounded-2xl border bg-card p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Building2 className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-bold">Active Startup</h3>
-        </div>
-        <div className="grid gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Startup Name</label>
-            <input
+      <section className="rounded-xl border bg-card p-6">
+        <h3 className="text-lg font-semibold mb-6">Active startup</h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="startup-name">Startup name</Label>
+            <Input
+              id="startup-name"
               value={startupData.name}
-              onChange={(e) => setStartupData(p => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setStartupData((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Industry</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="industry">Industry</Label>
+            <Input
+              id="industry"
               value={startupData.industry}
-              onChange={(e) => setStartupData(p => ({ ...p, industry: e.target.value }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setStartupData((p) => ({ ...p, industry: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Website</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
               value={startupData.website}
-              onChange={(e) => setStartupData(p => ({ ...p, website: e.target.value }))}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              onChange={(e) => setStartupData((p) => ({ ...p, website: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Description</label>
-            <textarea
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
               value={startupData.description}
-              onChange={(e) => setStartupData(p => ({ ...p, description: e.target.value }))}
-              rows={3}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm resize-none"
+              onChange={(e) => setStartupData((p) => ({ ...p, description: e.target.value }))}
             />
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
-        >
-          {loading ? "Saving..." : <><Save className="h-4 w-4" /> Save Changes</>}
-        </button>
+        <Button onClick={handleSave} disabled={loading}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {loading ? "Saving…" : "Save changes"}
+        </Button>
       </div>
     </div>
   );

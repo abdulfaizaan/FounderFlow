@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { ProgressBar } from "@/components/onboarding/progress-bar";
 import { StepPersonal } from "@/components/onboarding/step-personal";
 import { StepStartup } from "@/components/onboarding/step-startup";

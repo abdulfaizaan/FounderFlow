@@ -265,6 +265,10 @@ model Message {
   @@index([founderId])
 }
 
+// ponytail: community models (Forum*, Resource, JobListing, CoFounderPost,
+// CommunityEvent) are orphaned since the community pages/actions were cut.
+// Kept to avoid a destructive migration on possibly-empty tables; drop them
+// in one migration when the paid community actually ships.
 model ForumCategory {
   id          String      @id @default(cuid())
   name        String      @unique

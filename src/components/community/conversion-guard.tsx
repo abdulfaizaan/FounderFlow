@@ -14,24 +14,43 @@ interface ConversionGuardProps {
 
 export function ConversionGuard({ children, featureName }: ConversionGuardProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [error, setError] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        // This is a client-side check. In a real app, we'd fetch the user's subscription status from an API.
-        const response = await fetch("/api/user/subscription");
-        const data = await response.json();
-        setIsAuthorized(data.status === "active");
-      } catch (e) {
-        setIsAuthorized(false);
-      }
+  async function checkAuth() {
+    try {
+      const response = await fetch("/api/user/subscription");
+      const data = await response.json();
+      setIsAuthorized(data.status === "active");
+    } catch {
+      setError(true);
     }
+  }
+
+  useEffect(() => {
     checkAuth();
   }, []);
 
+  if (error) {
+    return (
+      <Card className="p-8 text-center flex flex-col items-center justify-center gap-4 max-w-md mx-auto">
+        <p className="text-sm text-muted-foreground">
+          Could not verify your subscription. Check your connection.
+        </p>
+        <Button variant="outline" size="sm" onClick={checkAuth}>
+          Retry
+        </Button>
+      </Card>
+    );
+  }
+
   if (isAuthorized === null) {
-    return <div className="flex items-center justify-center h-full">Checking subscription...</div>;
+    return (
+      <div className="space-y-3" aria-hidden>
+        <div className="h-24 w-full bg-muted animate-pulse rounded-xl" />
+        <div className="h-24 w-full bg-muted animate-pulse rounded-xl" />
+      </div>
+    );
   }
 
   if (!isAuthorized) {

@@ -36,6 +36,6 @@ export async function updateGoal(
   });
 
   revalidatePath("/today");
-  revalidatePath("/plan");
+  
   return goal;
 }

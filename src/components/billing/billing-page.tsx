@@ -7,7 +7,7 @@ import {
   setProvider,
 } from "@/lib/actions/billing";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Check, Zap, Calendar, CreditCard } from "lucide-react";
 
 interface Subscription {
@@ -88,9 +88,9 @@ export function BillingPage({ subscription: sub }: BillingPageProps) {
           <div className="flex items-center gap-3 mt-2">
             <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
               sub.status === "ACTIVE"
-                ? "bg-green-100 text-green-800"
+                ? "bg-muted text-foreground"
                 : sub.status === "TRIAL"
-                ? "bg-[#6349ea]/10 text-[#6349ea]"
+                ? "bg-muted text-foreground"
                 : sub.status === "EXPIRED"
                 ? "bg-red-100 text-red-700"
                 : "bg-muted text-muted-foreground"
@@ -159,7 +159,7 @@ export function BillingPage({ subscription: sub }: BillingPageProps) {
               <ul className="mt-4 space-y-2 text-sm">
                 {["Unlimited goals & tasks", "AI recommendations", "Weekly reviews", "AI copilot"].map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-primary" />
                     {f}
                   </li>
                 ))}
@@ -180,7 +180,7 @@ export function BillingPage({ subscription: sub }: BillingPageProps) {
               whileHover={{ y: -3 }}
               className="rounded-2xl border-2 border-primary bg-card p-6 relative shadow-xl shadow-primary/10"
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#6349ea] to-[#875fe0] text-white text-xs px-3 py-1 rounded-full font-medium shadow-md">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-foreground to-foreground/80 text-background text-xs px-3 py-1 rounded-full font-medium shadow-md">
                 Save 30%
               </div>
               <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ export function BillingPage({ subscription: sub }: BillingPageProps) {
               <ul className="mt-4 space-y-2 text-sm">
                 {["Everything in Monthly", "2 months free", "Priority support", "Early access to new features"].map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-primary" />
                     {f}
                   </li>
                 ))}

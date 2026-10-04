@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,18 +9,18 @@ import {
   Calendar,
   Sparkles,
   Settings,
-  Zap,
   BookOpen,
   TrendingUp,
-  ListTodo,
   Sun,
   Moon,
   Users,
   UserRound,
   Menu,
+  LayoutGrid,
+  CreditCard,
 } from "lucide-react";
 import { NotificationBell } from "@/components/dashboard/notifications/notification-bell";
-import { motion, AnimatePresence, MotionConfig } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { StartupSwitcher } from "@/components/dashboard/startup-switcher";
 import { AmbientBackground } from "@/components/dashboard/ambient-background";
 import { useTheme } from "@/components/theme-provider";
@@ -42,12 +42,14 @@ interface DashboardShellProps {
 
 function ThemeToggle() {
   const { dark, toggle } = useTheme();
-  const Icon = dark ? Sun : Moon;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const Icon = mounted ? (dark ? Sun : Moon) : Moon;
   return (
     <button
       onClick={toggle}
-      title={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+      title={mounted ? (dark ? "Switch to light mode" : "Switch to dark mode") : "Toggle theme"}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <Icon className="h-4 w-4" />
     </button>
@@ -56,13 +58,13 @@ function ThemeToggle() {
 
 const navItems = [
   { href: "/today", label: "Today", icon: Calendar },
-  { href: "/plan", label: "Plan", icon: ListTodo },
   { href: "/review", label: "Weekly Review", icon: Sparkles },
-  { href: "/journal", label: "Journal", icon: BookOpen },
+  { href: "/journal", label: "Notes", icon: BookOpen },
   { href: "/history", label: "History", icon: TrendingUp },
-  { href: "/wiki", label: "Wiki", icon: BookOpen },
   { href: "/crm", label: "CRM", icon: UserRound },
+  { href: "/portfolio", label: "Portfolio", icon: LayoutGrid },
   { href: "/community/chat", label: "Community", icon: Users },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -80,44 +82,36 @@ function SidebarContent({
   return (
     <>
       <Link href="/today" onClick={onNavigate} className="mb-6 flex items-center gap-2.5 px-2">
-        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#6349ea] via-[#875fe0] to-[#0099ff] flex items-center justify-center shadow-lg shadow-primary/25">
-          <Zap className="h-4 w-4 text-white" />
-        </div>
+        <img src="/logo.png" alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-contain" />
         <h1 className="text-lg font-bold tracking-tight">FounderFlow</h1>
       </Link>
 
       <StartupSwitcher startups={startups} activeStartupId={activeStartupId ?? ""} />
 
-      <nav className="space-y-1 flex-1">
-        {navItems.map((item, i) => {
+      <nav className="space-y-0.5 flex-1">
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
           return (
-            <motion.div
+            <Link
               key={item.href}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+                isActive
+                  ? "bg-primary/10 text-primary border-l-2 border-primary -ml-px pl-[11px]"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
             >
-              <Link
-                href={item.href}
-                onClick={onNavigate}
-                className={cn(
-                  "nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            </motion.div>
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border pt-4 px-2 space-y-3">
+      <div className="border-t border-border pt-4 px-2 space-y-3">
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <NotificationBell />
@@ -142,7 +136,7 @@ export function DashboardShell({ startups, activeStartupId, children }: Dashboar
       <div className="flex min-h-screen">
         <AmbientBackground containerRef={mainRef} />
 
-        <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl p-4">
+        <aside className="hidden md:flex w-[260px] shrink-0 flex-col border-r border-border bg-sidebar p-4">
           <SidebarContent startups={startups} activeStartupId={activeStartupId} />
         </aside>
 
@@ -150,7 +144,7 @@ export function DashboardShell({ startups, activeStartupId, children }: Dashboar
           <SheetContent
             side="left"
             overlayClassName="md:hidden"
-            className="bg-sidebar/95 p-4 md:hidden"
+            className="bg-sidebar p-4 md:hidden w-[260px]"
             showCloseButton={false}
           >
             <SheetTitle className="sr-only">Navigation menu</SheetTitle>
@@ -164,7 +158,7 @@ export function DashboardShell({ startups, activeStartupId, children }: Dashboar
               <button
                 onClick={toggleSidebar}
                 aria-label="Open menu"
-                className="rounded-lg border p-2 text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <Menu className="h-4 w-4" />
               </button>
@@ -173,10 +167,10 @@ export function DashboardShell({ startups, activeStartupId, children }: Dashboar
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
               >
                 {children}
               </motion.div>

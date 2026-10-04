@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveStartup } from "@/lib/startup-context";
 import { HistoryView } from "@/components/dashboard/history-view";
 import { HISTORY_WEEKS, buildBuckets, bucketIndexFor, weekStart } from "@/lib/progress-history";
+import { Reveal } from "@/components/reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +45,12 @@ export default async function HistoryPage({
 
   return (
     <div className="space-y-6">
-      <div>
+      <Reveal>
         <h1 className="text-3xl font-bold tracking-tight">History</h1>
         <p className="text-muted-foreground mt-1">
           {startup.name} — your last {HISTORY_WEEKS} weeks of progress.
         </p>
-      </div>
+      </Reveal>
       <HistoryView weeks={buckets} />
     </div>
   );

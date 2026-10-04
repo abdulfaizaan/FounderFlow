@@ -20,6 +20,8 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", status: "Lead", notes: "" });
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   async function handleSubmit() {
     setIsSubmitting(true);
@@ -53,6 +55,27 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
     }
   }
 
+  async function handleDrop(status: string, e: React.DragEvent) {
+    e.preventDefault();
+    setDragOverCol(null);
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id) return;
+    const lead = leads.find(l => l.id === id);
+    if (!lead || lead.status === status) return;
+
+    // Optimistic update, then persist and resync
+    setLeads(prev => prev.map(l => (l.id === id ? { ...l, status } : l)));
+    try {
+      await updateLeadStatus(id, status);
+      toast.success(`Moved to ${status}`);
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      const data = await getLeads(startupId);
+      setLeads(data);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this lead?")) return;
     try {
@@ -68,8 +91,8 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Early-Adopter CRM</h1>
-          <p className="text-muted-foreground">Track your first users from lead to customer.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Early-Adopter CRM</h1>
+          <p className="text-muted-foreground mt-1">Track your first users from lead to customer.</p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
@@ -130,9 +153,34 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
                 <Badge variant="secondary">{leads.filter(l => l.status === status).length}</Badge>
               </h3>
             </div>
-            <div className="flex flex-col gap-3 min-h-[500px] bg-muted/30 p-3 rounded-xl border border-dashed">
+            <div
+              className={`flex flex-col gap-3 min-h-[500px] p-3 rounded-xl border transition-colors duration-150 ${
+                dragOverCol === status
+                  ? "border-primary/60 bg-primary/5"
+                  : "border-dashed border-border bg-muted/30"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setDragOverCol(status);
+              }}
+              onDragLeave={() => setDragOverCol(prev => (prev === status ? null : prev))}
+              onDrop={(e) => handleDrop(status, e)}
+            >
               {leads.filter(l => l.status === status).map(lead => (
-                <Card key={lead.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+                <Card
+                  key={lead.id}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggingId(lead.id);
+                    e.dataTransfer.setData("text/plain", lead.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  className={`p-4 cursor-grab select-none transition-colors duration-150 active:cursor-grabbing ${
+                    draggingId === lead.id ? "opacity-40" : "hover:border-primary/20"
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-medium">{lead.name}</h4>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(lead.id)}>

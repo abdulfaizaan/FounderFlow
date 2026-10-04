@@ -72,34 +72,48 @@ function ChatContent() {
   }, []);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading community chat...</div>;
+    return (
+      <div className="space-y-2" aria-hidden>
+        <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
+        <div className="h-[70vh] w-full bg-muted animate-pulse rounded-xl" />
+      </div>
+    );
   }
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] border rounded-lg overflow-hidden bg-background">
-      <aside className="hidden md:flex w-64 border-r bg-muted/30 flex-col">
-        <ChannelSidebar channels={channels} activeChannelId={activeChannelId} onSelect={setActiveChannelId} />
-      </aside>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Community Chat</h1>
+        <p className="text-muted-foreground mt-1">
+          Real-time conversations with your fellow founders.
+        </p>
+      </div>
 
-      <PageSidebar label="Channels" open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <ChannelSidebar
-          channels={channels}
-          activeChannelId={activeChannelId}
-          onSelect={(id) => { setActiveChannelId(id); setSidebarOpen(false); }}
-        />
-      </PageSidebar>
+      <div className="flex h-[70vh] min-h-[420px] rounded-xl border bg-background overflow-hidden">
+        <aside className="hidden md:flex w-64 border-r bg-muted/30 flex-col">
+          <ChannelSidebar channels={channels} activeChannelId={activeChannelId} onSelect={setActiveChannelId} />
+        </aside>
 
-      <main className="flex-1 flex flex-col bg-background">
-        {activeChannel ? (
-          <ChatWindow channelId={activeChannelId!} channelName={activeChannel.name} onOpenChannels={() => setSidebarOpen(true)} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            Select a channel to start chatting
-          </div>
-        )}
-      </main>
+        <PageSidebar label="Channels" open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <ChannelSidebar
+            channels={channels}
+            activeChannelId={activeChannelId}
+            onSelect={(id) => { setActiveChannelId(id); setSidebarOpen(false); }}
+          />
+        </PageSidebar>
+
+        <main className="flex-1 flex flex-col bg-background min-w-0">
+          {activeChannel ? (
+            <ChatWindow channelId={activeChannelId!} channelName={activeChannel.name} onOpenChannels={() => setSidebarOpen(true)} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              Select a channel to start chatting
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

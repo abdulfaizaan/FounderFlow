@@ -23,7 +23,7 @@ export function FeedbackDialog() {
     const subject = encodeURIComponent("FounderFlow Feedback");
     const body = encodeURIComponent(feedback.trim());
     window.open(
-      `mailto:faizaanoffice777@gmail.com?subject=${subject}&body=${body}`,
+      `mailto:abdulfaizaan777@gmail.com?subject=${subject}&body=${body}`,
       "_blank"
     );
     setFeedback("");

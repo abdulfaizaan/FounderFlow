@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { getActiveStartupIdForUser } from "@/lib/startup-context";
 import { StartupCard } from "@/components/startup-card";
-import { Plus } from "lucide-react";
+import { NewStartupDialog } from "@/components/startup-dialog";
 import { redirect } from "next/navigation";
 
 export default async function PortfolioPage() {
@@ -24,25 +24,32 @@ export default async function PortfolioPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Portfolio</h1>
           <p className="text-muted-foreground mt-1">Manage your startups and ventures</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all">
-          <Plus className="h-4 w-4" /> Add Startup
-        </button>
+        <NewStartupDialog />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {startups.map((startup) => (
-          <StartupCard
-            key={startup.id}
-            startup={startup}
-            isActive={startup.id === ctx.startupId}
-          />
-        ))}
-      </div>
+      {startups.length === 0 ? (
+        <div className="rounded-xl border border-dashed bg-card/40 p-12 text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            You have no startups yet. Add one to start planning.
+          </p>
+          <NewStartupDialog />
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {startups.map((startup) => (
+            <StartupCard
+              key={startup.id}
+              startup={startup}
+              isActive={startup.id === ctx.startupId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

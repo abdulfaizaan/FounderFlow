@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Roboto, Montserrat } from "next/font/google";
+import { Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const roboto = Roboto({
+const geist = Geist({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-roboto",
-});
-
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-geist-sans",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +22,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${roboto.variable} ${montserrat.variable} ${roboto.className}`}>
+        <body className={`${geist.variable} ${geist.className}`}>
           <ThemeProvider>{children}</ThemeProvider>
         </body>
       </html>

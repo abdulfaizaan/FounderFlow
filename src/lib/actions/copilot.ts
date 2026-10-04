@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getActiveStartupIdForUser } from "@/lib/startup-context";
-import { geminiModel } from "@/lib/gemini";
+import { callAI } from "@/lib/ai-client";
 import { track } from "@/lib/analytics";
 import { getCopilotUsage, estimateCostUSD } from "@/lib/usage";
 import { revalidatePath } from "next/cache";
@@ -143,8 +143,7 @@ User: ${message}
 
 AI:`;
 
-  const result = await geminiModel.generateContent(prompt);
-  const response = result.response.text();
+  const response = await callAI(prompt);
 
   // Save AI response
   await prisma.copilotMessage.create({
@@ -172,6 +171,7 @@ AI:`;
 }
 
 export async function proposeSchedule() {
+  await ensureProSubscription();
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -219,19 +219,17 @@ Start from 9:00 AM. Ensure tasks don't overlap and total time is within ${workin
 Only include the most important tasks.
 Return ONLY the JSON.`;
 
-  const result = await geminiModel.generateContent(prompt);
-  const responseText = result.response.text();
-
-  try {
-    const json = JSON.parse(responseText.replace(/```json|```/g, ""));
-    return json.schedule;
-  } catch (e) {
-    console.error("Failed to parse AI schedule:", responseText);
-    throw new Error("AI failed to generate a valid schedule. Please try again.");
-  }
+  const result = await callAI(prompt, z.object({
+    schedule: z.array(z.object({
+      taskId: z.string(),
+      startTime: z.string(),
+    })),
+  }));
+  return result.schedule;
 }
 
 export async function applyProposedSchedule(schedule: { taskId: string; startTime: string }[]) {
+  await ensureProSubscription();
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 

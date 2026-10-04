@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { chatWithCopilot } from "@/lib/actions/copilot";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Bot, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -70,15 +70,15 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
-      className="rounded-2xl border bg-card overflow-hidden"
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="rounded-xl border border-border bg-card overflow-hidden"
     >
-      <div className="flex items-center justify-between px-5 py-3 border-b bg-muted/30">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#6349ea] to-[#0099ff] flex items-center justify-center">
-            <Bot className="h-4 w-4 text-white" />
+          <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Bot className="h-4 w-4 text-primary" />
           </div>
           <h3 className="text-sm font-semibold">AI Coach</h3>
         </div>
@@ -90,7 +90,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
                 key={m}
                 onClick={() => setMode(m)}
                 className={cn(
-                  "px-2 py-1 text-[10px] rounded-md transition-all",
+                  "px-2 py-1 text-[10px] rounded-md transition-colors",
                   mode === m ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -100,9 +100,9 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
           </div>
           {usage && (
             <span
-              className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+              className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
                 usage.used >= usage.limit
-                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  ? "bg-warning/10 text-warning-dark dark:text-warning"
                   : "bg-muted text-muted-foreground"
               }`}
               title={`${usage.used} of ${usage.limit} AI messages used this month. Resets on the 1st.`}
@@ -125,7 +125,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
                 <button
                   key={prompt}
                   onClick={() => handleSend(prompt)}
-                  className="text-left px-3 py-2 text-sm border rounded-lg hover:bg-muted transition-colors"
+                  className="text-left px-3 py-2 text-sm border border-border rounded-lg hover:border-primary/20 hover:bg-primary/5 transition-colors duration-150"
                 >
                   {prompt}
                 </button>
@@ -140,16 +140,16 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
               {messages.map((msg, i) => (
                 <motion.div
                   key={`${i}-${msg.content.length}`}
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className={`flex ${msg.role === "FOUNDER" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                    className={`max-w-[85%] rounded-lg px-3 py-2 text-sm border ${
                       msg.role === "FOUNDER"
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                        : "bg-muted"
+                        ? "bg-primary/10 border-primary/15 text-foreground"
+                        : "bg-muted border-border"
                     }`}
                   >
                     {msg.content}
@@ -159,7 +159,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
             </AnimatePresence>
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-muted rounded-xl px-3 py-2 text-sm text-muted-foreground flex items-center gap-1">
+                <div className="bg-muted border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground flex items-center gap-1">
                   <motion.span
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{ repeat: Infinity, duration: 1.2 }}
@@ -174,7 +174,7 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
           </div>
         )}
 
-        <div className="flex gap-2 pt-3 border-t">
+        <div className="flex gap-2 pt-3 border-t border-border">
           <input
             type="text"
             value={input}
@@ -185,17 +185,16 @@ export function CopilotChat({ history, usage }: CopilotChatProps) {
                 ? "Monthly AI limit reached — resets on the 1st"
                 : `Ask your ${mode} coach...`
             }
-            className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 transition-shadow"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/50 transition-shadow"
             disabled={loading || atLimit}
           />
-          <motion.button
+          <button
             onClick={() => handleSend()}
             disabled={loading || !input.trim() || atLimit}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center w-9 h-9 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50"
+            className="inline-flex items-center justify-center w-9 h-9 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
-          </motion.button>
+          </button>
         </div>
       </div>
     </motion.div>

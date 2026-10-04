@@ -15,6 +15,13 @@ import { RevenueEvidenceForm } from "@/components/dashboard/revenue-evidence-for
 import { CopilotChat } from "@/components/dashboard/copilot-chat";
 import { FeedbackCard } from "@/components/dashboard/feedback-card";
 import { AIScheduleProposer } from "@/components/dashboard/ai-schedule-proposer";
+import { TaskManager } from "@/components/dashboard/task-manager";
+import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
+import { CardHelp } from "@/components/dashboard/card-help";
+import { TodayHint } from "@/components/dashboard/today-hint";
+import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/reveal";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -26,65 +33,7 @@ export default async function TodayPage({
   const { startup: startupParam } = await searchParams;
   const { founder, startup } = await getActiveStartup(startupParam);
 
-  const availableMinutes = getAvailableMinutes(founder);
-
   const goal = startup.goals[0] ?? null;
-  const todayStandup = await prisma.standup.findFirst({
-    where: {
-      startupId: startup.id,
-      date: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-    },
-  });
-
-  const [openBlockers, recentEvidence, dismissedRecs, copilotMessages, todayTasks] =
-    await Promise.all([
-      prisma.blocker.findMany({
-        where: { startupId: startup.id, status: "OPEN" },
-        select: { id: true, description: true, taskId: true },
-      }),
-      prisma.evidence.findMany({
-        where: {
-          startupId: startup.id,
-          recordedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-        },
-        select: { id: true, type: true, value: true, note: true },
-      }),
-      prisma.recommendation.findMany({
-        where: { startupId: startup.id, status: { in: ["DISMISSED", "SNOOZED"] } },
-        select: { taskId: true },
-      }),
-      prisma.copilotMessage.findMany({
-        where: { startupId: startup.id },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      }),
-      (() => {
-        const dayStart = new Date();
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart);
-        dayEnd.setDate(dayEnd.getDate() + 1);
-        return prisma.task.findMany({
-          where: {
-            milestone: { goal: { startupId: startup.id, isActive: true } },
-            scheduledFor: { gte: dayStart, lt: dayEnd },
-            status: { not: "DONE" },
-          },
-          select: {
-            id: true,
-            title: true,
-            scheduledFor: true,
-            estimateMinutes: true,
-            milestone: { select: { title: true } },
-          },
-          orderBy: { scheduledFor: "asc" },
-        });
-      })(),
-    ]);
-
-  const copilotHistory = copilotMessages.reverse().map((m) => ({
-    role: m.role as "FOUNDER" | "AI",
-    content: m.content,
-  }));
 
   if (!goal) {
     return (
@@ -102,13 +51,129 @@ export default async function TodayPage({
             {
               key: "goal",
               message: "No active goal yet. Define one to start receiving daily recommendations.",
-              cta: { href: "/plan", label: "Set a goal" },
+              cta: { href: "/onboarding", label: "Set a goal" },
             },
           ]}
         />
       </div>
     );
   }
+
+  const availableMinutes = getAvailableMinutes(founder);
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+
+  // All reads depend only on ids known after getActiveStartup — run them in one
+  // parallel round-trip instead of a serial chain (TTFB).
+  const [
+    todayStandup,
+    openBlockers,
+    recentEvidence,
+    dismissedRecs,
+    copilotMessages,
+    todayTasks,
+    wh,
+    founderPreferenceMilestoneIds,
+    copilotUsage,
+    firstShown,
+    shownToday,
+    tasksDoneThisWeek,
+    planGoal,
+  ] = await Promise.all([
+    prisma.standup.findFirst({
+      where: {
+        startupId: startup.id,
+        date: { gte: todayStart },
+      },
+    }),
+    prisma.blocker.findMany({
+      where: { startupId: startup.id, status: "OPEN" },
+      select: { id: true, description: true, taskId: true },
+    }),
+    prisma.evidence.findMany({
+      where: {
+        startupId: startup.id,
+        recordedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+      select: { id: true, type: true, value: true, note: true },
+    }),
+    prisma.recommendation.findMany({
+      where: { startupId: startup.id, status: { in: ["DISMISSED", "SNOOZED"] } },
+      select: { taskId: true },
+    }),
+    prisma.copilotMessage.findMany({
+      where: { startupId: startup.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    (() => {
+      const dayEnd = new Date(todayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      return prisma.task.findMany({
+        where: {
+          milestone: { goal: { startupId: startup.id, isActive: true } },
+          scheduledFor: { gte: todayStart, lt: dayEnd },
+          status: { not: "DONE" },
+        },
+        select: {
+          id: true,
+          title: true,
+          scheduledFor: true,
+          estimateMinutes: true,
+          milestone: { select: { title: true } },
+        },
+        orderBy: { scheduledFor: "asc" },
+      });
+    })(),
+    prisma.founder.findUnique({
+      where: { id: founder.id },
+      select: { workingHours: true },
+    }),
+    getFounderPreferenceMilestoneIds(startup.id),
+    getCopilotUsage(founder.id),
+    prisma.analyticsEvent.findFirst({
+      where: { startupId: startup.id, event: "first_recommendation_shown" },
+      select: { event: true },
+    }),
+    prisma.analyticsEvent.findMany({
+      where: {
+        startupId: startup.id,
+        event: { in: ["recommendation_shown", "recommendation_shown_again"] },
+        createdAt: { gte: todayStart },
+      },
+      select: { event: true },
+    }),
+    prisma.task.count({
+      where: {
+        milestone: { goalId: goal.id },
+        status: "DONE",
+        updatedAt: { gte: weekStart },
+      },
+    }),
+    prisma.goal.findFirst({
+      where: { startupId: startup.id, isActive: true },
+      include: {
+        milestones: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            tasks: {
+              orderBy: { createdAt: "asc" },
+              where: { status: { not: "ARCHIVED" } },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const copilotHistory = copilotMessages.reverse().map((m) => ({
+    role: m.role as "FOUNDER" | "AI",
+    content: m.content,
+  }));
 
   const allTasks = goal.milestones.flatMap((m) => m.tasks);
   const openBlockerTaskIds = openBlockers
@@ -118,23 +183,19 @@ export default async function TodayPage({
   const eligibleTasks = allTasks.filter((t) =>
     ["TODO", "IN_PROGRESS"].includes(t.status)
   );
-  const wh = await prisma.founder.findUnique({
-    where: { id: founder.id },
-    select: { workingHours: true },
-  });
   const whObject = wh?.workingHours as { hoursPerDay?: number } | null;
   const gaps: ContextGapType[] = [];
   if (goal.milestones.length === 0) {
     gaps.push({
       key: "milestones",
       message: "You have a goal but no milestones. Break it into milestones to get recommendations.",
-      cta: { href: "/plan", label: "Add milestone" },
+      cta: { href: "/today", label: "Add milestone" },
     });
   } else if (eligibleTasks.length === 0) {
     gaps.push({
       key: "tasks",
       message: "No actionable tasks yet. Add tasks to a milestone.",
-      cta: { href: "/plan", label: "Add tasks" },
+      cta: { href: "/today", label: "Add tasks" },
     });
   }
   if (!whObject?.hoursPerDay) {
@@ -153,27 +214,11 @@ export default async function TodayPage({
     taskIdsToSnooze: dismissedRecs
       .map((r) => r.taskId)
       .filter((id): id is string => id !== null),
-    founderPreferenceMilestoneIds: await getFounderPreferenceMilestoneIds(startup.id),
+    founderPreferenceMilestoneIds,
   });
 
   const rec = getRecommendation(scored);
 
-  const copilotUsage = await getCopilotUsage(founder.id);
-
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const firstShown = await prisma.analyticsEvent.findFirst({
-    where: { startupId: startup.id, event: "first_recommendation_shown" },
-    select: { event: true },
-  });
-  const shownToday = await prisma.analyticsEvent.findMany({
-    where: {
-      startupId: startup.id,
-      event: { in: ["recommendation_shown", "recommendation_shown_again"] },
-      createdAt: { gte: todayStart },
-    },
-    select: { event: true },
-  });
   const shownTodaySet = new Set(shownToday.map((e) => e.event));
   if (rec?.primary) {
     if (!firstShown) {
@@ -199,18 +244,6 @@ export default async function TodayPage({
     }
   }
 
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  weekStart.setHours(0, 0, 0, 0);
-
-  const tasksDoneThisWeek = await prisma.task.count({
-    where: {
-      milestone: { goalId: goal.id },
-      status: "DONE",
-      updatedAt: { gte: weekStart },
-    },
-  });
-
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   const dateStr = new Date().toLocaleDateString("en-US", {
@@ -220,35 +253,40 @@ export default async function TodayPage({
   });
 
   return (
-    <div className="space-y-8">
-      <div className="animate-rise">
+    <div className="space-y-6">
+      <Reveal>
         <p className="text-sm font-medium text-primary">{dateStr}</p>
         <h1 className="text-3xl font-bold tracking-tight mt-1">
           Good {greeting}, {founder.name?.split(" ")[0] || "Founder"}
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">{startup.name}</p>
-      </div>
+      </Reveal>
 
-      <div className="animate-rise" style={{ animationDelay: "60ms" }}>
-        <GoalBanner
-          goal={{
-            id: goal.id,
-            title: goal.title,
-            targetDate: goal.targetDate,
-            definitionOfSuccess: goal.definitionOfSuccess,
-          }}
-        />
-      </div>
+      <TodayHint />
 
-      <div className="animate-rise" style={{ animationDelay: "90ms" }}>
-        <ContextGap gaps={gaps} />
-      </div>
+      <GoalBanner
+        goal={{
+          id: goal.id,
+          title: goal.title,
+          targetDate: goal.targetDate,
+          definitionOfSuccess: goal.definitionOfSuccess,
+        }}
+      />
+
+      <ContextGap gaps={gaps} />
 
       {rec?.primary ? (
-        <section className="animate-rise" style={{ animationDelay: "120ms" }}>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Today&apos;s recommendation
-          </h2>
+        <section>
+          <div className="flex items-center gap-1.5 mb-3">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Today&apos;s recommendation
+            </h2>
+            <CardHelp title="Today&apos;s recommendation">
+              The single task our ranking engine thinks you should do next, given your goal,
+              available time, open blockers, and recent evidence. Alternatives below are the
+              next-best picks — mark one Helpful or Not helpful to teach your preferences.
+            </CardHelp>
+          </div>
           <RecommendationCard recommendation={rec.primary} isPrimary evidence={recentEvidence} />
           {rec.alternatives.length > 0 && (
             <div className="mt-4">
@@ -269,22 +307,26 @@ export default async function TodayPage({
           )}
         </section>
       ) : (
-        <div className="animate-rise rounded-2xl border bg-card p-8 text-center" style={{ animationDelay: "120ms" }}>
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
           <p className="text-muted-foreground">
             All tasks done! Great work today.
           </p>
         </div>
       )}
 
-      <div className="animate-rise" style={{ animationDelay: "220ms" }}>
-        <FeedbackCard hasRecommendation={!!rec?.primary} />
-      </div>
+      <FeedbackCard hasRecommendation={!!rec?.primary} />
 
-      <div className="animate-rise" style={{ animationDelay: "300ms" }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Today&apos;s schedule
-          </h2>
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Today&apos;s schedule
+            </h2>
+            <CardHelp title="Today&apos;s schedule">
+              Tasks you&apos;ve scheduled for today, in time order. Use the ✦ AI proposer to
+              have your open tasks slotted into available time automatically.
+            </CardHelp>
+          </div>
           <AIScheduleProposer />
         </div>
         <TodaySchedule
@@ -292,55 +334,118 @@ export default async function TodayPage({
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3 animate-rise" style={{ animationDelay: "360ms" }}>
-        {todayStandup ? (
-          <div className="rounded-2xl border bg-card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-4 w-4 rounded-full bg-green-500" />
-              <h3 className="text-sm font-semibold">Today&apos;s Focus</h3>
+      <CollapsibleSection
+        title="Beyond today"
+        description="Plan tasks, log progress, and review the week."
+        defaultOpen={gaps.some((g) => g.key === "milestones" || g.key === "tasks")}
+      >
+        <div className="space-y-8">
+          <section>
+            <div className="flex items-center gap-1.5 mb-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Plan
+              </h2>
+              <CardHelp title="Plan">
+                Your active goal broken into milestones and tasks — the same content that used
+                to live on its own page, now folded into Today. Add, edit, and complete tasks
+                here; everything rolls up into your recommendations.
+              </CardHelp>
             </div>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Focus</p>
-                <p className="text-sm">{todayStandup.today || "No focus set for today."}</p>
+            {planGoal ? (
+              <TaskManager
+                goal={{ id: planGoal.id, title: planGoal.title }}
+                milestones={planGoal.milestones.map((m) => ({
+                  id: m.id,
+                  title: m.title,
+                  status: m.status,
+                  tasks: m.tasks.map((t) => ({
+                    id: t.id,
+                    title: t.title,
+                    status: t.status,
+                    priority: t.priority,
+                    estimateMinutes: t.estimateMinutes,
+                    dueDate: t.dueDate,
+                  })),
+                }))}
+              />
+            ) : (
+              <div className="rounded-xl border bg-card p-12 text-center space-y-4">
+                <p className="text-muted-foreground">
+                  No active goal yet. Set one up during onboarding.
+                </p>
+                <Button size="sm" variant="outline" render={<Link href="/onboarding" />}>
+                  Set up your goal
+                </Button>
               </div>
-              {todayStandup.blockers && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Blockers</p>
-                  <p className="text-sm text-destructive">{todayStandup.blockers}</p>
+            )}
+          </section>
+
+          <section>
+            <div className="flex items-center gap-1.5 mb-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Daily check-in
+              </h2>
+              <CardHelp title="Daily check-in">
+                Log your focus for today, record product or customer evidence, and log revenue
+                signals. Evidence feeds the recommendation engine and your weekly summary.
+              </CardHelp>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {todayStandup ? (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                    <h3 className="text-sm font-semibold">Today&apos;s Focus</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Focus</p>
+                      <p className="text-sm">{todayStandup.today || "No focus set for today."}</p>
+                    </div>
+                    {todayStandup.blockers && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Blockers</p>
+                        <p className="text-sm text-destructive">{todayStandup.blockers}</p>
+                      </div>
+                    )}
+                    <div className="pt-2">
+                      <StandupForm existingStandup={todayStandup} />
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div className="pt-2">
+              ) : (
                 <StandupForm existingStandup={todayStandup} />
-              </div>
+              )}
+              <EvidenceForm />
+              <RevenueEvidenceForm />
             </div>
-          </div>
-        ) : (
-          <StandupForm existingStandup={todayStandup} />
-        )}
-        <EvidenceForm />
-        <RevenueEvidenceForm />
-      </div>
+          </section>
 
-      <section className="animate-rise" style={{ animationDelay: "420ms" }}>
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          Your AI copilot
-        </h2>
-        <CopilotChat history={copilotHistory} usage={copilotUsage} />
-      </section>
+          <section>
+            <div className="flex items-center gap-1.5 mb-3">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Your AI copilot
+              </h2>
+              <CardHelp title="Your AI copilot">
+                Ask anything about your plan, blockers, or recent progress. Usage is metered by
+                your billing plan.
+              </CardHelp>
+            </div>
+            <CopilotChat history={copilotHistory} usage={copilotUsage} />
+          </section>
 
-      <div className="animate-rise" style={{ animationDelay: "480ms" }}>
-        <WeekSummary
-          tasksDone={tasksDoneThisWeek}
-          tasksTotal={allTasks.length}
-          evidenceCount={recentEvidence.length}
-          blockers={openBlockers.map((b) => ({
-            id: b.id,
-            description: b.description,
-          }))}
-          availableMinutes={availableMinutes}
-        />
-      </div>
+          <WeekSummary
+            tasksDone={tasksDoneThisWeek}
+            tasksTotal={allTasks.length}
+            evidenceCount={recentEvidence.length}
+            blockers={openBlockers.map((b) => ({
+              id: b.id,
+              description: b.description,
+            }))}
+            availableMinutes={availableMinutes}
+          />
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { switchStartup, createStartup } from "@/lib/actions/startups";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChevronsUpDown, Check, Plus, Building2, Zap } from "lucide-react";
 
 interface Startup {
@@ -55,9 +54,11 @@ export function StartupSwitcher({ startups, activeStartupId }: StartupSwitcherPr
   };
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-6" onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
       <button
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
         className="flex w-full items-center justify-between rounded-xl border bg-card px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
       >
         <span className="flex items-center gap-2 truncate">
@@ -67,23 +68,21 @@ export function StartupSwitcher({ startups, activeStartupId }: StartupSwitcherPr
         <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -5, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -5, scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-              className="absolute z-50 mt-2 w-full rounded-xl border bg-card p-2 shadow-xl"
-            >
+      {open && (
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+      )}
+      {open && (
+        <div
+          role="menu"
+          className="absolute z-50 mt-2 w-full rounded-xl border bg-card p-2 shadow-xl"
+        >
               <p className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Your startups
               </p>
               {startups.map((s) => (
                 <button
                   key={s.id}
+                  role="menuitem"
                   onClick={() => handleSwitch(s.id)}
                   className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
                     s.id === activeStartupId
@@ -141,10 +140,8 @@ export function StartupSwitcher({ startups, activeStartupId }: StartupSwitcherPr
                   </button>
                 </div>
               )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+      )}
     </div>
   );
 }

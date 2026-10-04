@@ -7,8 +7,10 @@ import {
   deleteJournalEntry,
 } from "@/lib/actions/journal";
 import { JOURNAL_TYPES } from "@/lib/constants/journal";
-import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { Trash2, PenLine, Lightbulb, GitBranch, BookOpen, Trophy, Flame, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type Entry = {
   id: string;
@@ -17,13 +19,13 @@ type Entry = {
   createdAt: Date;
 };
 
-const TYPE_META: Record<string, { label: string; icon: any; color: string }> = {
-  IDEA: { label: "Idea", icon: Lightbulb, color: "text-yellow-500 bg-yellow-500/10" },
-  DECISION: { label: "Decision", icon: GitBranch, color: "text-sky-500 bg-sky-500/10" },
-  LESSON: { label: "Lesson", icon: BookOpen, color: "text-violet-500 bg-violet-500/10" },
-  WIN: { label: "Win", icon: Trophy, color: "text-emerald-500 bg-emerald-500/10" },
-  FAILURE: { label: "Failure", icon: Flame, color: "text-rose-500 bg-rose-500/10" },
-  CUSTOMER_INSIGHT: { label: "Customer insight", icon: Users, color: "text-indigo-500 bg-indigo-500/10" },
+const TYPE_META: Record<string, { label: string; icon: any }> = {
+  IDEA: { label: "Idea", icon: Lightbulb },
+  DECISION: { label: "Decision", icon: GitBranch },
+  LESSON: { label: "Lesson", icon: BookOpen },
+  WIN: { label: "Win", icon: Trophy },
+  FAILURE: { label: "Failure", icon: Flame },
+  CUSTOMER_INSIGHT: { label: "Customer insight", icon: Users },
 };
 
 export function JournalView({ entries }: { entries: Entry[] }) {
@@ -40,131 +42,108 @@ export function JournalView({ entries }: { entries: Entry[] }) {
       await createJournalEntry({ type: type as any, content });
       setContent("");
       router.refresh();
+    } catch {
+      toast.error("Could not save entry");
     } finally {
       setSaving(false);
     }
   };
 
+  const removeEntry = async (id: string) => {
+    if (!window.confirm("Delete this entry?")) return;
+    try {
+      await deleteJournalEntry(id);
+      router.refresh();
+    } catch {
+      toast.error("Could not delete entry");
+    }
+  };
+
   const visible = filter === "ALL" ? entries : entries.filter((e) => e.type === filter);
+
+  const chipClass = (active: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      active
+        ? "bg-primary text-primary-foreground"
+        : "bg-muted text-muted-foreground hover:text-foreground"
+    }`;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-card p-5">
-        <div className="flex items-center gap-1 mb-3">
+      <div className="rounded-xl border bg-card p-5">
+        <div className="flex items-center gap-1 mb-3 overflow-x-auto">
           {JOURNAL_TYPES.map((t) => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                type === t
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
+            <button key={t} onClick={() => setType(t)} className={`shrink-0 ${chipClass(type === t)}`}>
               {TYPE_META[t]?.label}
             </button>
           ))}
         </div>
-        <textarea
+        <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What happened? Write it down before it fades…"
           rows={3}
-          className="w-full rounded-xl border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring/50"
+          className="w-full resize-none"
         />
         <div className="flex justify-end mt-3">
-          <button
-            onClick={submit}
-            disabled={!content.trim() || saving}
-            className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all"
-          >
+          <Button onClick={submit} disabled={!content.trim() || saving} size="sm">
             <PenLine className="h-4 w-4" />
             {saving ? "Saving…" : "Add entry"}
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="flex gap-1 flex-wrap">
-        <button
-          onClick={() => setFilter("ALL")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-            filter === "ALL"
-              ? "bg-foreground text-background"
-              : "bg-muted text-muted-foreground hover:text-foreground"
-          }`}
-        >
+        <button onClick={() => setFilter("ALL")} className={chipClass(filter === "ALL")}>
           All
         </button>
         {JOURNAL_TYPES.map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-              filter === t
-                ? "bg-foreground text-background"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
+          <button key={t} onClick={() => setFilter(t)} className={`capitalize ${chipClass(filter === t)}`}>
             {TYPE_META[t]?.label}
           </button>
         ))}
       </div>
 
       <div className="space-y-3">
-        <AnimatePresence initial={false}>
-          {visible.length === 0 && (
-            <div className="rounded-2xl border border-dashed bg-card/40 p-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {filter === "ALL"
-                  ? "No entries yet. Capture your first thought above."
-                  : "No entries of this type yet."}
-              </p>
-            </div>
-          )}
-          {visible.map((e, i) => {
-            const meta = TYPE_META[e.type];
-            const Icon = meta?.icon ?? BookOpen;
-            return (
-              <motion.div
-                key={e.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ delay: Math.min(i * 0.02, 0.2) }}
-                className="rounded-2xl border bg-card p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${meta?.color ?? ""}`}
-                    >
-                      <Icon className="h-3 w-3" />
-                      {meta?.label ?? e.type}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(e.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      await deleteJournalEntry(e.id);
-                      router.refresh();
-                    }}
-                    className="text-muted-foreground hover:text-rose-500 rounded-lg p-1 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+        {visible.length === 0 && (
+          <div className="rounded-xl border border-dashed bg-card/40 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              {filter === "ALL"
+                ? "No entries yet. Capture your first thought above."
+                : "No entries of this type yet."}
+            </p>
+          </div>
+        )}
+        {visible.map((e) => {
+          const meta = TYPE_META[e.type];
+          const Icon = meta?.icon ?? BookOpen;
+          return (
+            <div key={e.id} className="rounded-xl border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" />
+                    {meta?.label ?? e.type}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(e.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
                 </div>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{e.content}</p>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                <button
+                  onClick={() => removeEntry(e.id)}
+                  className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{e.content}</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

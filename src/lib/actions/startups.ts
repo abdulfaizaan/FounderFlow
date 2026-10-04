@@ -93,3 +93,83 @@ export async function switchStartup(startupId: string) {
   revalidatePath("/today");
   revalidatePath("/review");
 }
+
+export async function getProfile() {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const founder = await prisma.founder.findUnique({
+    where: { clerkId: userId },
+    include: {
+      startups: {
+        where: { isPrimary: true },
+        take: 1,
+      },
+    },
+  });
+
+  if (!founder) return null;
+
+  const workingHours = founder.workingHours as { hoursPerDay?: number } | null;
+
+  return {
+    founder: {
+      name: founder.name,
+      timezone: founder.timezone,
+      hoursPerDay: workingHours?.hoursPerDay ?? 8,
+    },
+    startup: founder.startups[0]
+      ? {
+          name: founder.startups[0].name,
+          industry: founder.startups[0].industry ?? "",
+          website: founder.startups[0].website ?? "",
+          description: founder.startups[0].description ?? "",
+        }
+      : null,
+  };
+}
+
+export async function updateProfile(data: {
+  name: string;
+  timezone: string;
+  hoursPerDay: number;
+  startupName: string;
+  industry: string;
+  website: string;
+  description: string;
+}) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const founder = await prisma.founder.findUnique({
+    where: { clerkId: userId },
+    include: {
+      startups: { where: { isPrimary: true }, take: 1 },
+    },
+  });
+  if (!founder) throw new Error("No founder found");
+
+  await prisma.founder.update({
+    where: { id: founder.id },
+    data: {
+      name: data.name,
+      timezone: data.timezone,
+      workingHours: { hoursPerDay: data.hoursPerDay },
+    },
+  });
+
+  if (founder.startups[0]) {
+    await prisma.startup.update({
+      where: { id: founder.startups[0].id },
+      data: {
+        name: data.startupName,
+        industry: data.industry || null,
+        website: data.website || null,
+        description: data.description || null,
+      },
+    });
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/today");
+}

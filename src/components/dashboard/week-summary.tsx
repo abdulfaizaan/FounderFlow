@@ -4,6 +4,7 @@ import { CheckCircle2, FileText, Clock, AlertCircle, Check, X } from "lucide-rea
 import { resolveBlocker, dismissBlocker } from "@/lib/actions/blockers";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CardHelp } from "./card-help";
 
 interface WeekSummaryProps {
   tasksDone: number;
@@ -32,32 +33,35 @@ export function WeekSummary({ tasksDone, tasksTotal, evidenceCount, blockers, av
   };
 
   return (
-    <div className="card-hover rounded-2xl border bg-card p-6">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-5">
-        This Week
-      </h3>
+    <div className="rounded-xl border border-border bg-card p-6">
+      <div className="flex items-center gap-1.5 mb-5">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          This Week
+        </h3>
+        <CardHelp title="This Week">
+          Your seven-day snapshot: tasks completed against total, evidence logged, and open
+          blockers you can resolve or dismiss right here.
+        </CardHelp>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="animate-rise rounded-xl bg-muted/50 p-4 text-center"
-          style={{ animationDelay: "520ms" }}>
-          <CheckCircle2 className="h-5 w-5 text-success mx-auto mb-2" />
+        <div className="rounded-lg bg-muted/50 p-4 text-center transition-colors duration-150 hover:bg-muted/80">
+          <CheckCircle2 className="h-5 w-5 text-primary mx-auto mb-2" />
           <p className="text-2xl font-bold">{tasksDone}/{tasksTotal}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Tasks done</p>
-          <div className="h-1.5 w-full bg-muted rounded-full mt-3 overflow-hidden">
+          <div className="h-1.5 w-full bg-border rounded-full mt-3 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#6349ea] to-[#0099ff] rounded-full transition-all duration-500"
+              className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${pctDone}%` }}
             />
           </div>
         </div>
-        <div className="animate-rise rounded-xl bg-muted/50 p-4 text-center"
-          style={{ animationDelay: "560ms" }}>
+        <div className="rounded-lg bg-muted/50 p-4 text-center transition-colors duration-150 hover:bg-muted/80">
           <FileText className="h-5 w-5 text-primary mx-auto mb-2" />
           <p className="text-2xl font-bold">{evidenceCount}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Evidence</p>
         </div>
-        <div className="animate-rise rounded-xl bg-muted/50 p-4 text-center"
-          style={{ animationDelay: "600ms" }}>
+        <div className="rounded-lg bg-muted/50 p-4 text-center transition-colors duration-150 hover:bg-muted/80">
           <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
           <p className="text-2xl font-bold">{hours}h{mins > 0 ? ` ${mins}m` : ""}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Available</p>
@@ -65,7 +69,7 @@ export function WeekSummary({ tasksDone, tasksTotal, evidenceCount, blockers, av
       </div>
 
       {blockers.length > 0 && (
-        <div className="mt-5 pt-5 border-t">
+        <div className="mt-5 pt-5 border-t border-border">
           <p className="text-xs font-medium text-destructive flex items-center gap-1 mb-2">
             <AlertCircle className="h-3 w-3" />
             Open Blockers ({blockers.length})
@@ -81,7 +85,7 @@ export function WeekSummary({ tasksDone, tasksTotal, evidenceCount, blockers, av
                   <button
                     onClick={() => handleAction(resolveBlocker, b.id)}
                     disabled={isPending}
-                    className="p-1 hover:bg-success/20 hover:text-success rounded transition-colors"
+                    className="p-1 hover:bg-primary/20 hover:text-primary rounded transition-colors"
                     title="Resolve"
                   >
                     <Check className="h-3 w-3" />

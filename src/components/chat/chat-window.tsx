@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -91,10 +90,8 @@ export function ChatWindow({ channelId, channelName, onOpenChannels }: { channel
       <ScrollArea ref={scrollRef} className="flex-1 p-4">
         <div className="flex flex-col gap-4">
           {messages.map((msg) => (
-            <motion.div
+            <div
               key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
               className="flex gap-3 max-w-[80%]"
             >
               <Avatar>
@@ -111,7 +108,7 @@ export function ChatWindow({ channelId, channelName, onOpenChannels }: { channel
                   <p className="text-sm">{msg.content}</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </ScrollArea>
