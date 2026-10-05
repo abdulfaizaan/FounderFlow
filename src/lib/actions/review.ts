@@ -106,7 +106,7 @@ Rules:
 - Keep it under 3 minutes to read
 - Be direct and specific`;
 
-  const result = await callAI(prompt);
+  const result = await callAI<string>(prompt);
   const reviewText = result;
 
   await track("weekly_review_generated", {

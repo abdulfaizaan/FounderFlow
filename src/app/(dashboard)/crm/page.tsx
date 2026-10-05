@@ -10,7 +10,7 @@ export default async function CRMPage() {
   const ctx = await getActiveStartupIdForUser(userId);
   if (!ctx) redirect("/onboarding");
 
-  const initialLeads = await getLeads(ctx.startupId);
+  const initialLeads = await getLeads();
 
   return <CRMView initialLeads={initialLeads} startupId={ctx.startupId} />;
 }

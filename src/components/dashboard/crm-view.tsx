@@ -26,11 +26,11 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
   async function handleSubmit() {
     setIsSubmitting(true);
     try {
-      await createLead(formData, startupId);
+      await createLead(formData);
       toast.success("Lead added!");
       setIsModalOpen(false);
       setFormData({ name: "", email: "", status: "Lead", notes: "" });
-      const data = await getLeads(startupId);
+      const data = await getLeads();
       setLeads(data);
     } catch (e: any) {
       toast.error(e.message || "Failed to add lead");
@@ -48,7 +48,7 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
     try {
       await updateLeadStatus(id, STATUSES[nextIndex]);
       toast.success(`Moved to ${STATUSES[nextIndex]}`);
-      const data = await getLeads(startupId);
+      const data = await getLeads();
       setLeads(data);
     } catch (e: any) {
       toast.error("Failed to update status");
@@ -71,7 +71,7 @@ export function CRMView({ initialLeads, startupId }: { initialLeads: any[], star
     } catch {
       toast.error("Failed to update status");
     } finally {
-      const data = await getLeads(startupId);
+      const data = await getLeads();
       setLeads(data);
     }
   }

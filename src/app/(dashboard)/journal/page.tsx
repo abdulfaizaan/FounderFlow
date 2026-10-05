@@ -20,7 +20,7 @@ export default async function JournalPage({
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
-    getWikiStructure(startup.id),
+    getWikiStructure(),
   ]);
 
   return (

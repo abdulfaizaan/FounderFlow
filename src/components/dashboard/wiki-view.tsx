@@ -82,7 +82,7 @@ export function WikiView({ initialStructure, startupId }: { initialStructure: an
   const [createName, setCreateName] = useState("");
 
   const refreshStructure = async () => {
-    const data = await getWikiStructure(startupId);
+    const data = await getWikiStructure();
     setStructure(data);
   };
 
@@ -91,10 +91,10 @@ export function WikiView({ initialStructure, startupId }: { initialStructure: an
     if (!name || !createKind) return;
     try {
       if (createKind === "folder") {
-        await createWikiFolder({ name }, startupId);
+        await createWikiFolder({ name });
         toast.success("Folder created");
       } else {
-        const page = await createWikiPage({ title: name, content: "# " + name + "\nStart writing…", folderId: undefined }, startupId);
+        const page = await createWikiPage({ title: name, content: "# " + name + "\nStart writing…", folderId: undefined });
         setActivePageId(page.id);
         toast.success("Page created");
       }

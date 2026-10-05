@@ -8,6 +8,8 @@ import { callAI } from "@/lib/ai-client";
 import { track } from "@/lib/analytics";
 import { getCopilotUsage, estimateCostUSD } from "@/lib/usage";
 import { revalidatePath } from "next/cache";
+import { ensureProSubscription } from "@/lib/auth-utils";
+import { z } from "zod";
 
 type CoachMode = "tactical" | "strategic" | "support";
 
@@ -143,7 +145,7 @@ User: ${message}
 
 AI:`;
 
-  const response = await callAI(prompt);
+  const response = await callAI<string>(prompt);
 
   // Save AI response
   await prisma.copilotMessage.create({

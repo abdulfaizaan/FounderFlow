@@ -24,8 +24,8 @@ describe('deleteTask Security', () => {
       founder: { id: 'founder_a' },
     });
 
-    prisma.task.findFirst.mockResolvedValue({ id: mockTaskId });
-    prisma.task.update.mockResolvedValue({ id: mockTaskId, status: 'ARCHIVED' });
+    (prisma.task.findFirst as any).mockResolvedValue({ id: mockTaskId });
+    (prisma.task.update as any).mockResolvedValue({ id: mockTaskId, status: 'ARCHIVED' });
 
     await expect(deleteTask(mockTaskId)).resolves.not.toThrow();
     expect(prisma.task.update).toHaveBeenCalledWith(
@@ -48,7 +48,7 @@ describe('deleteTask Security', () => {
     });
 
     // Simulate findOwnedTask returning null because the task belongs to startup_b
-    prisma.task.findFirst.mockResolvedValue(null);
+    (prisma.task.findFirst as any).mockResolvedValue(null);
 
     await expect(deleteTask(victimTaskId)).rejects.toThrow('Task not found');
     expect(prisma.task.update).not.toHaveBeenCalled();

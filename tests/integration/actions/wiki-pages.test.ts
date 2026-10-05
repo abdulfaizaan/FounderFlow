@@ -23,7 +23,7 @@ describe('Wiki Page Security', () => {
       founder: { id: 'founder_a' },
     });
 
-    prisma.wikiPage.create.mockResolvedValue({ id: 'page_a', title: 'Test' });
+    (prisma.wikiPage.create as any).mockResolvedValue({ id: 'page_a', title: 'Test' });
 
     await expect(createWikiPage({ title: 'Test', content: 'Content' })).resolves.toBeDefined();
     expect(prisma.wikiPage.create).toHaveBeenCalledWith(
@@ -44,7 +44,7 @@ describe('Wiki Page Security', () => {
       founder: { id: 'founder_a' },
     });
 
-    prisma.wikiPage.update.mockRejectedValue(new Error('Record not found'));
+    (prisma.wikiPage.update as any).mockRejectedValue(new Error('Record not found'));
 
     await expect(updateWikiPage(victimPageId, { title: 'Hacked' }))
       .rejects.toThrow();
@@ -67,7 +67,7 @@ describe('Wiki Page Security', () => {
       founder: { id: 'founder_a' },
     });
 
-    prisma.wikiPage.delete.mockRejectedValue(new Error('Record not found'));
+    (prisma.wikiPage.delete as any).mockRejectedValue(new Error('Record not found'));
 
     await expect(deleteWikiPage(victimPageId)).rejects.toThrow();
     expect(prisma.wikiPage.delete).toHaveBeenCalledWith(
